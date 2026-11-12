@@ -287,7 +287,7 @@ const IC = {
 };
 const icon = (k, sw=1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`;
 const PAGES = [
-  ["build","建置","電堆建置","掃描電堆上的 QR Code，記錄每個位置的 S/N。50 個位置全部完成後自動切換成正式模式。"],
+  ["build","建置","電堆建置","掃描電堆上的 QR Code，記錄每個位置的 S/N。50 顆全部建置完後，按「建置完成」切換成正式模式。"],
   ["fill","填寫","新增紀錄","掃 QR 進來的人從這裡開始：選類型、填寫、送出。"],
   ["map","配置總表","電堆配置總表","5 串 × 10 位。點任一位置查看履歷、修改狀態或修正 S/N。"],
   ["records","紀錄","紀錄","使用、異常、更換與交換的所有紀錄。"],
@@ -298,7 +298,7 @@ function toast(msg, err){ const t=$("toast"); t.textContent=msg; t.className="to
 
 const ROOM_ID = window.SPACE_ID || "flex120-unit2"; // 第二台的資料路徑，跟第一台分開
 const TOTAL = 50;
-let fs, root, S = {slots:[], changes:[], events:[], usage:[], build:[]}, unsubs = [];
+let fs, root, S = {slots:[], changes:[], events:[], usage:[], build:[], meta:[]}, unsubs = [];
 const col = n => root.collection(n);
 
 // ---------- 啟動 ----------
@@ -320,7 +320,7 @@ function showError(title, msg){
 function connect(){
   unsubs.forEach(u=>u()); unsubs=[];
   root = fs.collection("space").doc(ROOM_ID);
-  let first = true; const loaded = {slots:false,changes:false,events:false,usage:false,build:false};
+  let first = true; const loaded = {slots:false,changes:false,events:false,usage:false,build:false,meta:false};
   for (const name of Object.keys(loaded)){
     unsubs.push(col(name).onSnapshot(snap => {
       S[name] = snap.docs.map(d => ({id:d.id, ...d.data()}));
@@ -340,7 +340,7 @@ const slot = p => S.slots.find(s=>s.pos===p);
 window.addEventListener("hashchange", () => { render(); window.scrollTo(0,0); });
 
 // 建置模式：50 個位置沒填滿前只顯示「建置」；填滿後變成原本的四個頁面
-const isBuilt = () => S.slots.length >= TOTAL;
+const isBuilt = () => S.meta.some(m => m.id==="state" && m.built);
 const availPages = () => isBuilt() ? PAGES.filter(p=>p[0]!=="build") : PAGES.filter(p=>p[0]==="build");
 let navMode = null;
 function renderNav(){
@@ -352,7 +352,6 @@ function renderNav(){
 
 function render(){
   if (navMode !== isBuilt()){
-    if (navMode === false) toast("50 個位置全部建置完成，已切換成正式模式");
     navMode = isBuilt(); renderNav();
   }
   const avail = availPages();
@@ -423,13 +422,33 @@ function renderBuild(){
     <label>記錄人<input id="b_by" value="${esc(ls.get("by"))}" placeholder="姓名" autocomplete="name"></label>
     <label class="ck"><input type="checkbox" id="b_cont" ${buildCont?"checked":""}>連續建置：存檔後自動掃下一個空位</label>
     <button class="btn" id="b_go" ${nx?"":"disabled"}>${nx?`掃描下一個空位　${nx}`:"全部完成"}</button>
-    <p class="muted" style="margin:0">點左邊任一位置可以單獨掃描、重掃或清除。</p>
+    <p class="muted" style="margin:0">點左邊任一位置可以單獨掃描、重掃或清除。每一格存檔後就已經存到雲端，沒做完可以直接關掉，下次打開會接著做。</p>
+    <button class="btn line" id="b_done" ${done>=TOTAL?"":"disabled"}>建置完成，切換成正式模式</button>
+    <p class="muted" style="margin:0">⚠ ${done>=TOTAL?"請先在左邊確認每一格的 S/N 都正確，再按「建置完成」。切換後就不會再顯示建置頁。":`要等 50 顆全部建置完才能按（還差 ${TOTAL-done} 顆）。`}</p>
     <h2 style="margin:6px 0 0;font-size:15px">最近建置</h2><div class="feed">${recent}</div>
   </section></div>`;
   $("b_by").oninput = e => ls.set("by", e.target.value.trim());
   $("b_cont").onchange = e => { buildCont = e.target.checked; ls.set("buildCont", buildCont?"1":"0"); };
   $("b_go").onclick = () => { const p = nextEmpty(); if (p) buildAt(p); };
   $app.querySelectorAll(".tile").forEach(t => t.onclick = () => posDialog(t.dataset.pos));
+  $("b_done").onclick = finishDialog;
+}
+
+function finishDialog(){
+  if (S.slots.length < TOTAL) return toast(`還有 ${TOTAL-S.slots.length} 顆沒建置，不能完成`, true);
+  dialog(`<h2>確定建置完成？</h2>
+    <div class="preview" style="color:var(--ng)">⚠ 按下去後建置頁會關閉，網站切換成正式模式（填寫、配置總表、紀錄、QR 與匯出）。請確認 50 顆的 S/N 都已經核對過。</div>
+    <p class="muted" style="margin:0">如果之後發現 S/N 有錯，可以在「配置總表」點該位置修正。</p>
+    <button class="btn" id="fd_go">確定，切換成正式模式</button>
+    <button class="btn line" id="fd_x">取消</button>`);
+  $("fd_x").onclick = closeDlg;
+  $("fd_go").onclick = async () => {
+    $("fd_go").disabled = true;
+    try{
+      await col("meta").doc("state").set({built:true, builtAt:nowStr(), by:buildBy(), count:S.slots.length});
+      closeDlg(); location.hash = "#map"; toast("建置完成，已切換成正式模式");
+    }catch(err){ toast("切換失敗："+err.message, true); $("fd_go").disabled = false; }
+  };
 }
 
 function needBy(){
@@ -494,6 +513,7 @@ function confirmBuild(p, sn){
       await b.commit(); closeDlg(); toast(`${p} 已存檔`);
       const nx = nextEmpty(p);
       if (buildCont && nx && !old) setTimeout(() => buildAt(nx), 350);
+      else if (!nx) toast("50 個位置都掃完了，確認無誤後按「建置完成」");
     }catch(err){ toast("儲存失敗："+err.message, true); $("cf_go").disabled=false; $("cf_go").textContent="確認存檔"; }
   };
 }
@@ -736,7 +756,15 @@ function renderTools(){
   <section class="panel noprint"><h2>匯出 Excel</h2>
     <p class="muted" style="margin-top:0">配置、更換交換紀錄、異常紀錄、使用紀錄、建置紀錄五張表，顏色跟原本的 Excel 一樣。</p>
     <button class="btn" data-act="export">下載 Excel</button></section>
+  <section class="panel noprint"><h2>建置模式</h2>
+    <p class="muted" style="margin-top:0">需要補掃或重新建置時，可以切回建置模式。已經有的資料和紀錄都不會被刪除。</p>
+    <button class="btn line" id="reopen">重新開啟建置模式</button></section>
   </div>`;
+  $("reopen").onclick = async function(){
+    if (this.dataset.y !== "1"){ this.dataset.y = "1"; this.textContent = "再按一次確定切回建置模式"; return; }
+    try{ await col("meta").doc("state").set({built:false}, {merge:true}); location.hash = "#build"; toast("已切回建置模式"); }
+    catch(err){ toast("切換失敗："+err.message, true); }
+  };
   $app.querySelectorAll("[data-act=export]").forEach(b=>b.onclick=exportXlsx);
   try { new QRCode($("qr"), {text:url, width:240, height:240, correctLevel:QRCode.CorrectLevel.M}); } catch { $("qr").textContent = "QR 產生失敗，請重新整理"; }
 }
