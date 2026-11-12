@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#13293d">
+<title>中科院 Flex120 電堆履歷</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2313293d'/%3E%3Cg fill='%2359c3cc'%3E%3Crect x='7' y='7' width='4' height='18' rx='1'/%3E%3Crect x='14' y='7' width='4' height='18' rx='1'/%3E%3Crect x='21' y='7' width='4' height='18' rx='1'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+/* Layout: desktop = navy sidebar + work area; phone = slim top bar + bottom tab bar. The stack grid is the hero. */
+:root{
+  --ink:#13293d; --ink-2:#1d3a55; --ink-fg:#e6eef4; --ink-muted:#8fa7ba;
+  --bg:#eef2f1; --panel:#ffffff; --sunk:#f4f7f6; --line:#d6dfde; --fg:#15222c; --muted:#5d6d75;
+  --accent:#0f7f8a; --accent-2:#59c3cc; --accent-fg:#ffffff;
+  --ok:#e2f2e8; --ok-fg:#1f5a37;
+  --yel:#ffe76a; --yel-fg:#4d3f00;
+  --org:#ffc54d; --org-fg:#4f3200;
+  --dorg:#e57a33; --dorg-fg:#ffffff;
+  --gray:#aab3b6; --gray-fg:#1f2629;
+  --rup:#ffd2cd; --rup-fg:#7a1710;
+  --oth:#e4d7fb; --oth-fg:#4a2a7a;
+  --ng:#c2281f;
+  --sans:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;
+  --latin:"IBM Plex Sans","Noto Sans TC",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --ink:#0b1824; --ink-2:#16293b; --ink-fg:#dbe6ee; --ink-muted:#7f97a9;
+  --bg:#0f171d; --panel:#172229; --sunk:#121b21; --line:#273740; --fg:#e3ecef; --muted:#93a4ab;
+  --accent:#3fb6c2; --accent-2:#59c3cc; --accent-fg:#06232a;
+  --ok:#183428; --ok-fg:#a6e3bd;
+  --yel:#5c4f0b; --yel-fg:#fff0a0;
+  --org:#6a4710; --org-fg:#ffd893;
+  --dorg:#a4511a; --dorg-fg:#ffffff;
+  --gray:#3b4448; --gray-fg:#cfd6d9;
+  --rup:#5c1f1b; --rup-fg:#ffb3ab;
+  --oth:#3a2a5c; --oth-fg:#d9c6ff;
+  --ng:#ff6b61; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:232px 1fr;min-height:100%}
+.side{background:var(--ink);color:var(--ink-fg);padding:22px 14px;display:flex;flex-direction:column;gap:24px;position:sticky;top:0;height:100vh}
+.brand{display:flex;gap:10px;align-items:center;padding:0 8px;text-decoration:none;color:inherit}
+.brand svg{flex:none}
+.brand b{display:block;font:700 17px/1.1 var(--latin);letter-spacing:.01em}
+.brand span{display:block;font-size:12px;color:var(--ink-muted);margin-top:3px}
+.side nav{display:grid;gap:2px}
+.side nav a,.side .sbtn{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:8px;color:var(--ink-fg);text-decoration:none;font-weight:500;background:none;border:0;cursor:pointer;text-align:left;width:100%}
+.side nav a:hover,.side .sbtn:hover{background:var(--ink-2)}
+.side nav a.on{background:var(--ink-2);box-shadow:inset 3px 0 0 var(--accent-2)}
+.side nav svg,.side .sbtn svg{width:19px;height:19px;flex:none;opacity:.9}
+.side .foot{margin-top:auto;display:grid;gap:2px;border-top:1px solid var(--ink-2);padding-top:14px}
+.side .meta{font-size:12px;color:var(--ink-muted);padding:6px 12px 0}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:28px 32px 6px}
+.top h1{margin:0;font-size:26px;line-height:1.2;text-wrap:balance}
+.top p{margin:4px 0 0;color:var(--muted);font-size:14px}
+main{padding:16px 32px 48px;display:grid;gap:18px;max-width:1180px;width:100%}
+.mbar,.tabbar{display:none}
+
+/* ---------- surfaces ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;min-width:0}
+.panel>h2{margin:0 0 12px;font-size:16px}
+.muted{color:var(--muted);font-size:13px}
+.sn{font-family:var(--mono);font-size:13px;word-break:break-all;letter-spacing:-.01em}
+.ng{color:var(--ng);font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.chip i{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.75}
+.f-,.t-{background:var(--ok);color:var(--ok-fg)}
+.f-abnormal,.t-abnormal{background:var(--yel);color:var(--yel-fg)}
+.f-highv,.t-highv{background:var(--dorg);color:var(--dorg-fg)}
+.f-rupture,.t-rupture{background:var(--rup);color:var(--rup-fg)}
+.f-other,.t-other{background:var(--oth);color:var(--oth-fg)}
+.t-swapped{background:var(--org);color:var(--org-fg)}
+.t-removed{background:var(--gray);color:var(--gray-fg)}
+
+/* ---------- forms ---------- */
+form{display:grid;gap:14px}
+label{display:grid;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+input,select,textarea{color:var(--fg);background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:11px 12px;width:100%;font-size:15px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+textarea{min-height:88px;resize:vertical}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.btn{border:0;border-radius:8px;padding:13px 16px;background:var(--accent);color:var(--accent-fg);font-weight:700;cursor:pointer;font-size:15px}
+.btn:hover{filter:brightness(1.06)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.line{background:transparent;color:var(--accent);border:1px solid var(--line);font-weight:600}
+.btn.sm{padding:7px 12px;font-size:13px}
+.ghost{background:transparent;color:var(--ng);border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-size:12px;cursor:pointer;white-space:nowrap}
+.seg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.seg.k4{grid-template-columns:repeat(4,1fr)}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 6px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);color:var(--fg);font-size:14.5px;font-weight:700;cursor:pointer;text-align:center}
+.seg label svg{width:20px;height:20px;opacity:.75}
+.seg label:has(input:checked){background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.seg label:has(input:checked) svg{opacity:1}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.preview{background:var(--sunk);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px;color:var(--muted)}
+.preview b{color:var(--fg)}
+
+/* ---------- fill page ---------- */
+.fill{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+.feed{display:grid;gap:0}
+.feed .it{display:grid;gap:2px;padding:11px 0;border-bottom:1px solid var(--line)}
+.feed .it:last-child{border-bottom:0}
+.feed .when{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.feed .what{font-size:14px}
+.feed .what b{font-weight:700}
+
+/* ---------- stack grid (hero) ---------- */
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.stats .chip{font-size:13px;padding:5px 12px}
+.module{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:6px;align-items:stretch}
+.module .hd{font:700 12px var(--latin);color:var(--muted);text-align:center;padding:2px 0 4px;letter-spacing:.02em}
+.module .rn{font:700 12px var(--latin);color:var(--muted);display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-variant-numeric:tabular-nums}
+.tile{border:1px solid transparent;border-radius:8px;padding:8px 10px;cursor:pointer;text-align:left;color:inherit;display:grid;gap:1px;min-width:0}
+.tile b{font:700 15px var(--latin);font-variant-numeric:tabular-nums}
+.tile .sn{font-size:11.5px;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile:hover{border-color:var(--fg)}
+.tile.sel{outline:3px solid var(--accent);outline-offset:1px}
+.mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+.detail .pos{font:700 40px/1 var(--latin);font-variant-numeric:tabular-nums}
+.detail .where{color:var(--muted);font-size:13px;margin-bottom:6px}
+.hist{display:grid;gap:0;margin-top:6px}
+.hist .it{padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px;display:grid;gap:2px}
+.hist .it:last-child{border-bottom:0}
+.hist .when{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);font-size:13.5px;padding:8px 0}
+
+/* ---------- records ---------- */
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.tabs{display:inline-flex;background:var(--sunk);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+.tabs button{border:0;background:none;padding:7px 14px;border-radius:7px;font-weight:600;color:var(--muted);cursor:pointer}
+.tabs button.on{background:var(--panel);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.tabs button span{font-weight:500;font-size:12px;margin-left:4px;font-variant-numeric:tabular-nums}
+.search{max-width:240px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;background:var(--sunk)}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.hl td{background:color-mix(in srgb,var(--yel) 30%,transparent)}
+.cfm{display:inline-flex;gap:6px;flex-wrap:wrap}
+
+/* ---------- tools page ---------- */
+.toolgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;align-items:start}
+.qrbox{background:#fff;color:#000;border-radius:var(--r);padding:22px;text-align:center;border:1px solid var(--line)}
+.qrbox #qr{display:flex;justify-content:center;margin:14px 0}
+.qrbox .t{font:700 20px var(--sans)}
+.qrbox .u{font:500 11px var(--mono);word-break:break-all;color:#444}
+
+/* ---------- login ---------- */
+#gate{min-height:100vh;min-height:100dvh;display:grid}
+.gate{min-height:100%;display:grid;grid-template-columns:1.1fr 1fr}
+.gate .art{background:var(--ink);color:var(--ink-fg);padding:48px;display:flex;flex-direction:column;justify-content:space-between;gap:32px;overflow:hidden}
+.gate .art h1{font:700 clamp(30px,4vw,46px)/1.15 var(--sans);margin:0;text-wrap:balance}
+.gate .art p{color:var(--ink-muted);max-width:30em;margin:12px 0 0}
+.gate .art .mini{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;max-width:300px}
+.gate .art .mini i{height:16px;border-radius:3px;background:var(--ink-2)}
+.gate .art .mini i.y{background:#ffe76a}.gate .art .mini i.o{background:#e57a33}.gate .art .mini i.r{background:#e14a3f}
+.gate .form{display:flex;align-items:center;justify-content:center;padding:32px 20px}
+.gate .form>div{width:100%;max-width:360px;display:grid;gap:18px}
+.gate .form h2{margin:0;font-size:22px}
+
+/* ---------- build mode ---------- */
+.tile.empty{background:var(--sunk);border:1px dashed var(--line);color:var(--muted)}
+.pbar{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.ck{display:flex;align-items:center;gap:8px;color:var(--fg);font-size:14px;font-weight:500}
+.ck input{width:auto}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:40}
+.dlg{background:var(--panel);color:var(--fg);border-radius:12px;padding:18px;width:100%;max-width:420px;max-height:92vh;overflow:auto;display:grid;gap:12px}
+.dlg h2{margin:0;font-size:18px}
+.dlg .big{font:700 34px/1 var(--latin);font-variant-numeric:tabular-nums}
+.dlg .btn{width:100%}
+#reader{width:100%;min-height:240px;background:#000;border-radius:8px;overflow:hidden}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:9px;font-weight:600;z-index:50;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.toast.err{background:var(--ng);color:#fff}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){.fill,.mapwrap{grid-template-columns:1fr}}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .side{display:none}
+  .mbar{display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--ink-fg);padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;position:sticky;top:0;z-index:20}
+  .mbar b{font:700 16px var(--latin)}
+  .mbar span{font-size:12px;color:var(--ink-muted)}
+  .top{padding:18px 16px 2px}
+  .top h1{font-size:22px}
+  main{padding:12px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+  .panel{padding:16px}
+  .tabbar{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--panel);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+  .tabbar a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;font-size:11.5px;font-weight:600;color:var(--muted);text-decoration:none;border-radius:8px}
+  .tabbar a svg{width:22px;height:22px}
+  .tabbar a.on{color:var(--accent)}
+  .seg.k4{grid-template-columns:repeat(2,1fr)}
+  .module{gap:4px}
+  .tile{padding:7px 4px;text-align:center}
+  .tile b{font-size:14px}
+  .tile .sn{display:none}
+  .gate{grid-template-columns:1fr}
+  .gate .art{padding:32px 20px 28px}
+  .gate .art .mini{display:none}
+  .gate .art{justify-content:flex-start;gap:28px}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .search{max-width:none;width:100%}
+  /* records become cards */
+  table.cards thead{display:none}
+  table.cards,table.cards tbody,table.cards tr,table.cards td{display:block;width:100%}
+  table.cards tr{border:1px solid var(--line);border-radius:9px;padding:6px 12px;margin-bottom:10px;background:var(--panel)}
+  table.cards td{border:0;padding:4px 0;display:grid;grid-template-columns:88px 1fr;gap:8px}
+  table.cards td::before{content:attr(data-l);color:var(--muted);font-size:12px;font-weight:600}
+  table.cards td:empty{display:none}
+  table.cards tr.hl td{background:none}
+  table.cards tr.hl{border-color:var(--dorg)}
+}
+@media print{.side,.mbar,.tabbar,.top,.noprint{display:none!important}body,.shell{background:#fff;display:block}main{padding:0}}
+@media (prefers-reduced-motion:no-preference){.tile,.btn,.seg label{transition:background .15s,border-color .15s,filter .15s}}
+</style>
+</head>
+<body>
+<div id="gate" hidden></div>
+<div class="shell" id="shell" hidden>
+  <aside class="side">
+    <a class="brand" href="#fill">
+      <svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1d3a55"/><g fill="#59c3cc"><rect x="7" y="7" width="4" height="18" rx="1"/><rect x="14" y="7" width="4" height="18" rx="1"/><rect x="21" y="7" width="4" height="18" rx="1"/></g></svg>
+      <div><b>中科院 Flex120</b><span>電堆履歷 · 測試部</span></div>
+    </a>
+    <nav id="sidenav"></nav>
+    <div class="foot">
+      <button class="sbtn" data-act="export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>匯出 Excel</button>
+      <div class="meta" id="sync">已連線</div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="mbar"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1d3a55"/><g fill="#59c3cc"><rect x="7" y="7" width="4" height="18" rx="1"/><rect x="14" y="7" width="4" height="18" rx="1"/><rect x="21" y="7" width="4" height="18" rx="1"/></g></svg><div><b>中科院 Flex120</b> <span>電堆履歷</span></div></div>
+    <div class="top" id="top"></div>
+    <main id="app"></main>
+  </div>
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+<div class="ov" id="ov" hidden><div class="dlg" id="dlg"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="config.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+const FLAG = {"": "正常", abnormal: "電壓過高 無法順利拉載", highv: "服役中但電壓偏高", rupture: "膜破", other: "其他異常原因"};
+const TAG = {"": "", removed: "已換下不使用", highv: "服役中電壓偏高", swapped: "交換後 PASS", abnormal: "有異常但未更換"};
+const $ = id => document.getElementById(id);
+const $app = $("app");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const nowStr = () => new Date().toLocaleString("zh-TW", {hour12:false});
+const ls = {get(k){try{return localStorage.getItem(k)||""}catch{return""}}, set(k,v){try{localStorage.setItem(k,v)}catch{}}, del(k){try{localStorage.removeItem(k)}catch{}}};
+const posList = t => String(t||"").split(/[，,、\s/]+/).map(s=>s.trim()).filter(s=>/^\d-\d{1,2}$/.test(s));
+const byDateDesc = (a,b) => (b.date||"").localeCompare(a.date||"") || (b.created||"").localeCompare(a.created||"");
+const shortSn = sn => { sn = String(sn||""); return /^\d{20,}$/.test(sn) ? sn.slice(-14, -6) : sn; };
+
+const IC = {
+  fill:'<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  map:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  records:'<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
+  tools:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h4v4h-4"/>',
+  usage:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  event:'<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>',
+  replace:'<path d="M4 4v6h6M20 20v-6h-6"/><path d="M20 10A8 8 0 0 0 6 5.3L4 10M4 14a8 8 0 0 0 14 4.7l2-4.7"/>',
+  swap:'<path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+  build:'<path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M7 12h10"/>'
+};
+const icon = (k, sw=1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`;
+const PAGES = [
+  ["build","建置","電堆建置","掃描電堆上的 QR Code，記錄每個位置的 S/N。50 個位置全部完成後自動切換成正式模式。"],
+  ["fill","填寫","新增紀錄","掃 QR 進來的人從這裡開始：選類型、填寫、送出。"],
+  ["map","配置總表","電堆配置總表","5 串 × 10 位。點任一位置查看履歷、修改狀態或修正 S/N。"],
+  ["records","紀錄","紀錄","使用、異常、更換與交換的所有紀錄。"],
+  ["tools","QR 與匯出","QR 與匯出","列印現場用的 QR Code，或把全部資料匯出成 Excel。"]
+];
+
+function toast(msg, err){ const t=$("toast"); t.textContent=msg; t.className="toast"+(err?" err":""); t.hidden=false; clearTimeout(t._h); t._h=setTimeout(()=>t.hidden=true, err?5000:2600); }
+
+const ROOM_ID = window.SPACE_ID || "flex120-unit2"; // 第二台的資料路徑，跟第一台分開
+const TOTAL = 50;
+let fs, root, S = {slots:[], changes:[], events:[], usage:[], build:[]}, unsubs = [];
+const col = n => root.collection(n);
+
+// ---------- 啟動 ----------
+function start(){
+  document.querySelectorAll("[data-act=export]").forEach(b=>b.onclick=exportXlsx);
+  try { firebase.initializeApp(window.FIREBASE_CONFIG); fs = firebase.firestore(); }
+  catch(e){ showError("還沒設定 Firebase", "請依「設定說明」步驟 3，把 Firebase 設定貼到 config.js。"); return; }
+  connect();
+}
+
+function showError(title, msg){
+  $("shell").hidden = true; $("gate").hidden = false;
+  $("gate").innerHTML = `<div class="gate"><div class="art">
+    <div class="brand"><svg width="38" height="38" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1d3a55"/><g fill="#59c3cc"><rect x="7" y="7" width="4" height="18" rx="1"/><rect x="14" y="7" width="4" height="18" rx="1"/><rect x="21" y="7" width="4" height="18" rx="1"/></g></svg><div><b>中科院 Flex120</b><span>電堆履歷 · 製造處測試部</span></div></div>
+    <div><h1>${esc(title)}</h1><p>${esc(msg)}</p></div></div>
+  <div class="form"></div></div>`;
+}
+
+function connect(){
+  unsubs.forEach(u=>u()); unsubs=[];
+  root = fs.collection("space").doc(ROOM_ID);
+  let first = true; const loaded = {slots:false,changes:false,events:false,usage:false,build:false};
+  for (const name of Object.keys(loaded)){
+    unsubs.push(col(name).onSnapshot(snap => {
+      S[name] = snap.docs.map(d => ({id:d.id, ...d.data()}));
+      loaded[name] = true;
+      if (first && Object.values(loaded).every(Boolean)){ first=false; $("gate").hidden=true; $("shell").hidden=false; }
+      if (!first){ $("sync").textContent = "已同步 " + new Date().toLocaleTimeString("zh-TW",{hour12:false,hour:"2-digit",minute:"2-digit"}); render(); }
+    }, err => {
+      unsubs.forEach(u=>u()); unsubs=[];
+      showError("連不上資料庫", err.message);
+    }));
+  }
+}
+
+// ---------- 路由 ----------
+const slotsSorted = () => [...S.slots].sort((a,b)=>a.str-b.str||a.num-b.num);
+const slot = p => S.slots.find(s=>s.pos===p);
+window.addEventListener("hashchange", () => { render(); window.scrollTo(0,0); });
+
+// 建置模式：50 個位置沒填滿前只顯示「建置」；填滿後變成原本的四個頁面
+const isBuilt = () => S.slots.length >= TOTAL;
+const availPages = () => isBuilt() ? PAGES.filter(p=>p[0]!=="build") : PAGES.filter(p=>p[0]==="build");
+let navMode = null;
+function renderNav(){
+  const P = availPages();
+  $("sidenav").innerHTML = P.map(([k,n])=>`<a href="#${k}" data-p="${k}">${icon(k)}${n}</a>`).join("");
+  $("tabbar").innerHTML = P.map(([k,n])=>`<a href="#${k}" data-p="${k}">${icon(k)}${n==="QR 與匯出"?"QR／匯出":n}</a>`).join("");
+  $("tabbar").style.gridTemplateColumns = `repeat(${P.length},1fr)`;
+}
+
+function render(){
+  if (navMode !== isBuilt()){
+    if (navMode === false) toast("50 個位置全部建置完成，已切換成正式模式");
+    navMode = isBuilt(); renderNav();
+  }
+  const avail = availPages();
+  let page = location.hash.slice(1);
+  if (!avail.some(p=>p[0]===page)) page = avail[0][0];
+  document.querySelectorAll("[data-p]").forEach(a => a.classList.toggle("on", a.dataset.p===page));
+  const P = PAGES.find(p=>p[0]===page);
+  $("top").innerHTML = `<div><h1>${P[2]}</h1><p>${P[3]}</p></div>`;
+  ({build:renderBuild, fill:renderFill, map:renderMap, records:renderRecords, tools:renderTools}[page])();
+}
+
+// ---------- 對話框與掃描 ----------
+function dialog(html){ $("dlg").innerHTML = html; $("ov").hidden = false; }
+function closeDlg(){ $("ov").hidden = true; $("dlg").innerHTML = ""; }
+
+// 開相機掃 QR。回傳：掃到的字串；"" = 改手動輸入；null = 取消
+function scanSn(title){
+  return new Promise(resolve => {
+    dialog(`<h2>${esc(title)}</h2><div id="reader"></div>
+      <p class="muted" id="rd_err" style="margin:0" hidden></p>
+      <button type="button" class="btn line" data-r="manual">改用手動輸入</button>
+      <button type="button" class="btn line" data-r="cancel">取消</button>`);
+    let qr = null, done = false;
+    const finish = async v => {
+      if (done) return; done = true;
+      try { if (qr) await qr.stop(); } catch {}
+      closeDlg(); resolve(v);
+    };
+    $("dlg").querySelector("[data-r=manual]").onclick = () => finish("");
+    $("dlg").querySelector("[data-r=cancel]").onclick = () => finish(null);
+    const fail = msg => { const e=$("rd_err"); if(!e) return; e.hidden=false; e.textContent=msg; };
+    if (typeof Html5Qrcode === "undefined") return fail("掃描元件沒有載入，請重新整理或改用手動輸入。");
+    qr = new Html5Qrcode("reader");
+    qr.start({facingMode:"environment"},
+      {fps:10, qrbox:(w,h)=>{ const s=Math.floor(Math.min(w,h)*0.7); return {width:s,height:s}; }},
+      txt => { if (navigator.vibrate) navigator.vibrate(120); finish(String(txt).trim()); },
+      () => {}
+    ).catch(err => { qr = null; fail("無法開啟相機："+(err && err.message || err)+"。請確認是 https 網址並允許相機權限，或改用手動輸入。"); });
+  });
+}
+
+// ---------- 建置 ----------
+let buildCont = ls.get("buildCont") !== "0";
+const ORDER = []; for (let s=1;s<=5;s++) for (let n=1;n<=10;n++) ORDER.push(`${s}-${n}`);
+function nextEmpty(after){
+  const i0 = after ? ORDER.indexOf(after)+1 : 0;
+  for (let i=0;i<ORDER.length;i++){ const p = ORDER[(i0+i)%ORDER.length]; if (!slot(p)) return p; }
+  return null;
+}
+const buildBy = () => (($("b_by") ? $("b_by").value : ls.get("by")) || "").trim();
+
+function renderBuild(){
+  const done = S.slots.length, nx = nextEmpty();
+  let cells = `<div></div>${[1,2,3,4,5].map(s=>`<div class="hd">String${s}</div>`).join("")}`;
+  for (let n=1;n<=10;n++){
+    cells += `<div class="rn">${n}</div>`;
+    for (let s=1;s<=5;s++){ const p=`${s}-${n}`, x=slot(p);
+      cells += `<button class="tile ${x?"f-":"empty"}${p===nx?" sel":""}" data-pos="${p}" aria-label="${p} ${x?"已建置":"未建置"}"><b>${p}</b><span class="sn">${x?esc(shortSn(x.sn)):"未建置"}</span></button>`; }
+  }
+  const recent = [...S.build].sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,6)
+    .map(r=>`<div class="it"><div class="when">${esc(r.created)}${r.by?`　${esc(r.by)}`:""}</div><div class="what"><b>${esc(r.action||"建置")} ${esc(r.pos)}</b>　<span class="sn">${esc(r.sn||r.old_sn)}</span></div></div>`).join("")
+    || `<p class="empty">還沒有建置紀錄。</p>`;
+  $app.innerHTML = `<div class="mapwrap">
+  <section class="panel"><div class="module">${cells}</div></section>
+  <section class="panel" style="display:grid;gap:14px">
+    <h2 style="margin:0">建置進度　${done} / ${TOTAL}</h2>
+    <div class="pbar"><i style="width:${done/TOTAL*100}%"></i></div>
+    <label>記錄人<input id="b_by" value="${esc(ls.get("by"))}" placeholder="姓名" autocomplete="name"></label>
+    <label class="ck"><input type="checkbox" id="b_cont" ${buildCont?"checked":""}>連續建置：存檔後自動掃下一個空位</label>
+    <button class="btn" id="b_go" ${nx?"":"disabled"}>${nx?`掃描下一個空位　${nx}`:"全部完成"}</button>
+    <p class="muted" style="margin:0">點左邊任一位置可以單獨掃描、重掃或清除。</p>
+    <h2 style="margin:6px 0 0;font-size:15px">最近建置</h2><div class="feed">${recent}</div>
+  </section></div>`;
+  $("b_by").oninput = e => ls.set("by", e.target.value.trim());
+  $("b_cont").onchange = e => { buildCont = e.target.checked; ls.set("buildCont", buildCont?"1":"0"); };
+  $("b_go").onclick = () => { const p = nextEmpty(); if (p) buildAt(p); };
+  $app.querySelectorAll(".tile").forEach(t => t.onclick = () => posDialog(t.dataset.pos));
+}
+
+function needBy(){
+  if (buildBy()) return true;
+  toast("請先填記錄人", true); if ($("b_by")) $("b_by").focus(); return false;
+}
+
+function posDialog(p){
+  const x = slot(p);
+  dialog(`<div class="muted">String${p.split("-")[0]} · No.${p.split("-")[1]}</div>
+    <div class="big">${p}</div>
+    <div class="sn" style="font-size:14px">${x?esc(x.sn):"尚未建置"}</div>
+    <button class="btn" id="pd_scan">${x?"重新掃描（覆蓋）":"掃描 QR Code"}</button>
+    <button class="btn line" id="pd_manual">手動輸入 S/N</button>
+    ${x?`<button class="btn line" id="pd_clear" style="color:var(--ng)">清除此位置</button>`:""}
+    <button class="btn line" id="pd_x">關閉</button>`);
+  $("pd_x").onclick = closeDlg;
+  $("pd_scan").onclick = () => { if (!needBy()) return closeDlg(); closeDlg(); buildAt(p); };
+  $("pd_manual").onclick = () => { if (!needBy()) return closeDlg(); confirmBuild(p, ""); };
+  if (x) $("pd_clear").onclick = function(){
+    if (this.dataset.y !== "1"){ this.dataset.y = "1"; this.textContent = "再按一次確定清除"; return; }
+    const b = fs.batch();
+    b.delete(col("slots").doc(p));
+    b.set(col("build").doc(), {action:"清除", date:today(), pos:p, sn:"", old_sn:x.sn, by:buildBy(), created:nowStr(), ts:Date.now()});
+    b.commit().then(()=>{ closeDlg(); toast(`${p} 已清除`); }).catch(err=>toast("清除失敗："+err.message, true));
+  };
+}
+
+async function buildAt(p){
+  if (!needBy()) return;
+  const raw = await scanSn(`掃描電堆 → 位置 ${p}`);
+  if (raw === null) return;
+  confirmBuild(p, raw);
+}
+
+function confirmBuild(p, sn){
+  const old = slot(p), by = buildBy();
+  dialog(`<h2>確認存檔　${p}</h2>
+    <form id="cf"><label>電堆 S/N<input id="cf_sn" class="sn" value="${esc(sn)}" required></label>
+    <div id="cf_msg" style="display:grid;gap:8px"></div>
+    <button class="btn" id="cf_go">確認存檔</button>
+    <button type="button" class="btn line" id="cf_re">重新掃描</button>
+    <button type="button" class="btn line" id="cf_x">取消</button></form>`);
+  const chk = () => {
+    const v = $("cf_sn").value.trim(), dup = v && S.slots.find(s=>s.sn===v && s.pos!==p);
+    let m = "";
+    if (dup) m += `<div class="preview" style="color:var(--ng)">這個 S/N 已經建置在 <b>${dup.pos}</b>，不能重複。要移動請先清除 ${dup.pos}。</div>`;
+    if (old && v && old.sn !== v) m += `<div class="preview">這個位置原本是 <span class="sn">${esc(old.sn)}</span>，存檔後會被取代。</div>`;
+    $("cf_msg").innerHTML = m; $("cf_go").disabled = !v || !!dup;
+  };
+  $("cf_sn").oninput = chk; chk(); if (!sn) $("cf_sn").focus();
+  $("cf_x").onclick = closeDlg;
+  $("cf_re").onclick = () => { closeDlg(); buildAt(p); };
+  $("cf").onsubmit = async e => {
+    e.preventDefault();
+    const v = $("cf_sn").value.trim(); if (!v) return;
+    $("cf_go").disabled = true; $("cf_go").textContent = "儲存中…";
+    const [s, n] = p.split("-").map(Number), b = fs.batch();
+    b.set(col("slots").doc(p), {pos:p, str:s, num:n, sn:v, flag:""});
+    b.set(col("build").doc(), {action: old?"重掃":"建置", date:today(), pos:p, sn:v, old_sn: old?old.sn:"", by, created:nowStr(), ts:Date.now()});
+    try{
+      await b.commit(); closeDlg(); toast(`${p} 已存檔`);
+      const nx = nextEmpty(p);
+      if (buildCont && nx && !old) setTimeout(() => buildAt(nx), 350);
+    }catch(err){ toast("儲存失敗："+err.message, true); $("cf_go").disabled=false; $("cf_go").textContent="確認存檔"; }
+  };
+}
+
+// ---------- 填寫 ----------
+const hm = i => String(Math.floor(i/2)).padStart(2,"0")+":"+(i%2?"30":"00");
+const slotTimes = (a,b,sel) => { let s=""; for(let i=a;i<=b;i++) s+=`<option value="${hm(i)}" ${i===sel?"selected":""}>${hm(i)}</option>`; return s; };
+let draft = null;
+
+function recentFeed(n){
+  const all = [
+    ...S.usage.map(u=>({date:u.date, created:u.created, by:u.by, html:`<b>使用紀錄</b>　${esc(u.from)}～${esc(u.to)}，產氫率 ${esc(u.rate)}%${u.abn==="有"?`，<span class="ng">有異常</span>`:""}`})),
+    ...S.events.map(e=>({date:e.date, created:e.created, by:e.by, html:`<b>異常${e.pos?` ${esc(e.pos)}`:""}</b>　${esc(e.descr)}`})),
+    ...S.changes.filter(c=>c.swap ? c.result==="Pass" : c.result!=="NG").map(c=>({date:c.date, created:c.created, by:c.by, html:`<b>${c.swap?`交換 ${esc(c.pos)} ⇄ ${esc(c.swap)}`:`更換 ${esc(c.pos)}`}</b>　${esc(c.reason)}`}))
+  ].sort(byDateDesc);
+  const seen = new Set(); const out = [];
+  for (const r of all){ const k=r.html; if (seen.has(k)) continue; seen.add(k); out.push(r); if (out.length>=n) break; }
+  return out.map(r=>`<div class="it"><div class="when">${esc(r.date)}${r.by?`　${esc(r.by)}`:""}</div><div class="what">${r.html}</div></div>`).join("") || `<p class="empty">還沒有紀錄。</p>`;
+}
+
+function renderFill(){
+  const nw=new Date(), st=Math.min(46, nw.getHours()*2+(nw.getMinutes()>=30?1:0)), dflt=[st, st+2];
+  const opts = slotsSorted().map(s=>`<option value="${s.pos}">${s.pos}　${esc(shortSn(s.sn))}${s.flag?`（${FLAG[s.flag]}）`:""}</option>`).join("");
+  $app.innerHTML = `<div class="fill">
+<section class="panel"><form id="f" novalidate>
+<div class="row"><label>日期<input type="date" id="date" name="date" value="${today()}" required></label>
+<label>記錄人<input id="by" name="by" value="${esc(ls.get("by"))}" placeholder="姓名" autocomplete="name"></label></div>
+<div><div class="muted" style="margin-bottom:6px;font-weight:500">類型</div><div class="seg k4">
+<label><input type="radio" name="kind" value="usage" checked>${icon("usage")}<span>使用紀錄</span></label>
+<label><input type="radio" name="kind" value="event">${icon("event")}<span>記錄異常</span></label>
+<label><input type="radio" name="kind" value="replace">${icon("replace")}<span>更換電堆</span></label>
+<label><input type="radio" name="kind" value="swap">${icon("swap")}<span>交換位置</span></label></div></div>
+<label id="posWrap">位置<select id="pos" name="pos"><option value="">選擇位置</option>${opts}</select></label>
+
+<div data-k="usage" style="display:grid;gap:14px">
+<div class="row"><label>使用時段（開始）<select id="t_from" name="t_from">${slotTimes(0,47,dflt[0])}</select></label>
+<label>使用時段（結束）<select id="t_to" name="t_to">${slotTimes(1,48,dflt[1])}</select></label></div>
+<label>設定產氫率 (%)<input id="rate" name="rate" type="number" inputmode="decimal" min="0" max="200" step="any" placeholder="例：70"></label>
+<div><div class="muted" style="margin-bottom:6px;font-weight:500">有無異常</div><div class="seg">
+<label><input type="radio" name="abn" value="無" checked><span>無</span></label>
+<label><input type="radio" name="abn" value="有"><span>有</span></label></div></div>
+<label id="u_descr_w">異常問題描述<textarea id="u_descr" name="u_descr" placeholder="例：String1 跳 purge time out"></textarea></label></div>
+
+<div data-k="event" style="display:grid;gap:14px">
+<label>異常描述<textarea id="descr" name="descr" placeholder="例：電壓過高，無法拉載"></textarea></label>
+<label>此位置狀態改為<select id="flag" name="flag"><option value="keep">不變</option>${Object.entries(FLAG).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label></div>
+
+<div data-k="replace" style="display:grid;gap:14px">
+<label>原電堆 S/N（自動帶入，可修改）<input id="old_sn" name="old_sn" class="sn" placeholder="先選位置"></label>
+<label>新電堆 S/N<input id="new_sn" name="new_sn" class="sn" placeholder="例：SM250527P015" autocapitalize="characters"></label>
+<button type="button" class="btn line" id="scan_new">掃描 QR 帶入新電堆 S/N</button>
+<label>原因<input id="reason_r" name="reason_r" value="更換新電堆"></label></div>
+
+<div data-k="swap" style="display:grid;gap:14px">
+<label>交換到的位置<select id="other" name="other"><option value="">選擇位置</option>${slotsSorted().map(s=>`<option>${s.pos}</option>`).join("")}</select></label>
+<label><span id="sw_a_l">此位置的電堆 S/N</span><input id="sw_a" name="sw_a" class="sn" placeholder="先選位置"></label>
+<label><span id="sw_b_l">交換位置的電堆 S/N</span><input id="sw_b" name="sw_b" class="sn" placeholder="先選交換位置"></label>
+<div class="preview" id="sw_hint">兩邊的 S/N 會從配置總表自動帶入，送出後互換。若跟現場不符請直接修改。</div>
+<label>原因<input id="reason_s" name="reason_s" value="電壓過高"></label></div>
+
+<button class="btn" id="go">送出</button></form></section>
+<section class="panel"><h2>最近紀錄</h2><div class="feed">${recentFeed(8)}</div></section>
+</div>`;
+  const f = $("f");
+  if (draft) for (const [k,v] of Object.entries(draft)){ const el=f.elements[k]; if(!el) continue; if(k==="kind") f.querySelector(`input[name=kind][value=${v}]`).checked=true; else if(k!=="abn") el.value=v; }
+  if (draft && draft.abn) f.querySelector(`input[name=abn][value=${draft.abn}]`).checked=true;
+  const kv = () => f.querySelector("input[name=kind]:checked").value;
+  const sw = () => { f.querySelectorAll("[data-k]").forEach(d=>d.hidden=d.dataset.k!==kv());
+    $("posWrap").hidden = kv()==="usage";
+    $("u_descr_w").hidden = f.querySelector("input[name=abn]:checked").value!=="有"; };
+  f.querySelectorAll("input[name=kind],input[name=abn]").forEach(r=>r.addEventListener("change", sw)); sw();
+  const labels = () => { const p=f.pos.value,o=f.other.value;
+    $("sw_a_l").textContent = p ? `${p} 的電堆 S/N` : "此位置的電堆 S/N";
+    $("sw_b_l").textContent = o ? `${o} 的電堆 S/N` : "交換位置的電堆 S/N";
+    $("sw_hint").innerHTML = (p&&o) ? `送出後：<b>${p}</b> 改裝 <span class="sn">${esc(f.sw_b.value||"?")}</span>，<b>${o}</b> 改裝 <span class="sn">${esc(f.sw_a.value||"?")}</span>。若跟現場不符請直接修改。` : "兩邊的 S/N 會從配置總表自動帶入，送出後互換。若跟現場不符請直接修改。"; };
+  const fillSn = () => { const A=slot(f.pos.value), B=slot(f.other.value);
+    f.old_sn.value = A ? A.sn : ""; f.sw_a.value = A ? A.sn : ""; f.sw_b.value = B ? B.sn : ""; labels(); };
+  f.pos.addEventListener("change", fillSn); f.other.addEventListener("change", fillSn);
+  f.sw_a.addEventListener("input", labels); f.sw_b.addEventListener("input", labels);
+  if (!draft) fillSn(); else labels();
+  f.oninput = f.onchange = () => { draft = Object.fromEntries(new FormData(f)); };
+  $("scan_new").onclick = async () => {
+    const v = await scanSn("掃描新電堆");
+    if (v === null) return;
+    const nf = $("f"); if (!nf) return;
+    if (v){
+      const dup = S.slots.find(s=>s.sn===v);
+      nf.new_sn.value = v; draft = Object.fromEntries(new FormData(nf));
+      if (dup) toast(`注意：這個 S/N 目前裝在 ${dup.pos}`, true);
+    }
+    nf.new_sn.focus();
+  };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(f)), k = d.kind;
+    if (k==="usage"){
+      if (d.t_to <= d.t_from) return toast("結束時間要晚於開始時間", true);
+      if (String(d.rate).trim()==="") return toast("請填寫設定產氫率", true);
+      if (d.abn==="有" && !d.u_descr.trim()) return toast("請填寫異常問題描述", true);
+    } else {
+      const need = {event:["descr","異常描述"], replace:["new_sn","新電堆 S/N"], swap:["other","交換到的位置"]}[k];
+      if (!d.pos) return toast("請選擇位置", true);
+      if (!String(d[need[0]]).trim()) return toast("請填寫"+need[1], true);
+      if (k==="swap" && d.other===d.pos) return toast("不能跟自己交換", true);
+    }
+    $("go").disabled = true; $("go").textContent = "儲存中…";
+    ls.set("by", d.by.trim());
+    try{ const msg = await submit(d); draft = null; toast(msg); renderFill(); }
+    catch(err){ toast("儲存失敗："+err.message, true); $("go").disabled=false; $("go").textContent="送出"; }
+  };
+}
+
+async function submit(d){
+  const a = slot(d.pos), by = d.by.trim(), meta = {by, created: nowStr()}, b = fs.batch();
+  if (d.kind === "usage"){
+    const descr = d.abn==="有" ? d.u_descr.trim() : "";
+    b.set(col("usage").doc(), {date:d.date, from:d.t_from, to:d.t_to, rate:Number(d.rate), abn:d.abn, descr, ...meta});
+    if (descr) b.set(col("events").doc(), {date:d.date, pos:"", descr:`${d.t_from}～${d.t_to} 產氫率${Number(d.rate)}%：${descr}`, ...meta});
+    await b.commit(); return `已記錄 ${d.date} ${d.t_from}～${d.t_to} 使用紀錄`;
+  }
+  if (d.kind === "event"){
+    b.set(col("events").doc(), {date:d.date, pos:d.pos, descr:d.descr.trim(), ...meta});
+    if (d.flag !== "keep") b.update(col("slots").doc(d.pos), {flag:d.flag});
+    await b.commit(); return `已記錄 ${d.pos} 異常`;
+  }
+  if (d.kind === "replace"){
+    const nsn = d.new_sn.trim().toUpperCase(), r = d.reason_r.trim(), osn = (d.old_sn||"").trim() || a.sn;
+    b.set(col("changes").doc(), {date:d.date, pos:d.pos, result:"NG", reason:r, sn:osn, new_sn:"", swap:"", tag:"removed", ...meta});
+    b.set(col("changes").doc(), {date:d.date, pos:d.pos, result:"Pass", reason:r, sn:osn, new_sn:nsn, swap:"", tag:"", ...meta});
+    b.update(col("slots").doc(d.pos), {sn:nsn, flag:""});
+    await b.commit(); return `已更換 ${d.pos}：${osn} → ${nsn}`;
+  }
+  const o = slot(d.other), r = d.reason_s.trim();
+  const aSn = (d.sw_a||"").trim() || a.sn, bSn = (d.sw_b||"").trim() || o.sn;
+  b.set(col("changes").doc(), {date:d.date, pos:a.pos, result:"Pass", reason:`${r}，跟${o.pos}交換`, sn:aSn, new_sn:bSn, swap:o.pos, tag:"swapped", ...meta});
+  b.set(col("changes").doc(), {date:d.date, pos:o.pos, result:"NG", reason:`${r}，跟${a.pos}交換`, sn:bSn, new_sn:aSn, swap:a.pos, tag:"abnormal", ...meta});
+  b.update(col("slots").doc(a.pos), {sn:bSn, flag:o.flag||""});
+  b.update(col("slots").doc(o.pos), {sn:aSn, flag:a.flag||""});
+  await b.commit(); return `已交換 ${a.pos} ⇄ ${o.pos}`;
+}
+
+// ---------- 配置總表 ----------
+let selPos = null;
+function posHistory(p){
+  const sn = (slot(p)||{}).sn;
+  const items = [
+    ...S.events.filter(e=>posList(e.pos).includes(p)).map(e=>({date:e.date, created:e.created, html:`<b>異常</b>　${esc(e.descr)}`})),
+    ...S.changes.filter(c=>c.pos===p).map(c=>({date:c.date, created:c.created, html:`<b class="${c.result==="NG"?"ng":""}">${esc(c.result||"—")}</b>　${esc(c.reason)}${c.new_sn?`<div class="sn">${esc(c.sn)} → ${esc(c.new_sn)}</div>`:""}`}))
+  ].sort(byDateDesc);
+  return items.map(i=>`<div class="it"><div class="when">${esc(i.date)}</div><div>${i.html}</div></div>`).join("") || `<p class="empty">這個位置還沒有紀錄。</p>`;
+}
+
+function renderMap(){
+  const cnt = k => S.slots.filter(s=>(s.flag||"")===k).length;
+  let cells = `<div></div>${[1,2,3,4,5].map(s=>`<div class="hd">String${s}</div>`).join("")}`;
+  for (let n=1;n<=10;n++){
+    cells += `<div class="rn">${n}</div>`;
+    for (let s=1;s<=5;s++){ const x = slot(`${s}-${n}`);
+      cells += x ? `<button class="tile f-${x.flag||""}${selPos===x.pos?" sel":""}" data-pos="${x.pos}" aria-label="${x.pos} ${FLAG[x.flag||""]}"><b>${x.pos}</b><span class="sn">${esc(shortSn(x.sn))}</span></button>` : "<div></div>"; }
+  }
+  const e = selPos && slot(selPos);
+  const detail = e ? `<section class="panel detail" id="detail">
+    <div class="where">String${e.str} · No.${e.num}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div class="pos">${e.pos}</div><span class="chip f-${e.flag||""}"><i></i>${FLAG[e.flag||""]}</span></div>
+    <div class="sn" style="font-size:14px;margin:10px 0 14px">${esc(e.sn)}</div>
+    <form id="ef">
+      <div class="row"><label>狀態<select id="ef_flag">${Object.entries(FLAG).map(([k,v])=>`<option value="${k}" ${k===(e.flag||"")?"selected":""}>${v}</option>`).join("")}</select></label></div>
+      <label>S/N（只修正打錯，不會產生紀錄）<input id="ef_sn" class="sn" value="${esc(e.sn)}" required></label>
+      <div class="cfm"><button class="btn sm">儲存修改</button><button type="button" class="btn line sm" id="ef_x">關閉</button></div>
+    </form>
+    <h2 style="margin:20px 0 4px;font-size:15px">這個位置的履歷</h2><div class="hist">${posHistory(e.pos)}</div>
+  </section>` : `<section class="panel detail"><h2>位置詳情</h2><p class="empty">點左邊任一位置，查看電堆 S/N、修改狀態，以及這個位置的所有紀錄。</p></section>`;
+  $app.innerHTML = `<div class="stats">${Object.entries(FLAG).map(([k,v])=>`<span class="chip f-${k}"><i></i>${v}　${cnt(k)}</span>`).join("")}</div>
+  <div class="mapwrap"><section class="panel"><div class="module">${cells}</div></section>${detail}</div>`;
+  $app.querySelectorAll(".tile").forEach(c=>c.onclick=()=>{ selPos = c.dataset.pos; renderMap(); if (matchMedia("(max-width:1100px)").matches) $("detail").scrollIntoView({behavior:"smooth", block:"start"}); });
+  if (e){
+    $("ef_x").onclick=()=>{ selPos=null; renderMap(); };
+    $("ef").onsubmit=async ev=>{ ev.preventDefault();
+      try{ await col("slots").doc(e.pos).update({flag:$("ef_flag").value, sn:$("ef_sn").value.trim()}); toast("已儲存"); }
+      catch(err){ toast("儲存失敗："+err.message, true); } };
+  }
+}
+
+// ---------- 紀錄 ----------
+let recTab = "usage", recQ = "";
+function delBtn(kind,id){ return `<span class="cfm" data-del="${kind}:${id}"><button class="ghost">刪除</button></span>`; }
+function wireDelete(){
+  $app.querySelectorAll("[data-del]").forEach(sp=>{
+    sp.querySelector("button").onclick=()=>{
+      sp.innerHTML=`<button class="ghost" data-y>確定刪除</button><button class="ghost" style="color:var(--muted)" data-n>取消</button>`;
+      sp.querySelector("[data-n]").onclick=()=>renderRecordsBody();
+      sp.querySelector("[data-y]").onclick=async()=>{ const [k,id]=sp.dataset.del.split(":");
+        try{ await col(k).doc(id).delete(); toast("已刪除"); }catch(err){ toast("刪除失敗："+err.message,true); } };
+    };
+  });
+}
+const match = (r, keys) => !recQ || keys.some(k => String(r[k]??"").toLowerCase().includes(recQ.toLowerCase()));
+
+function renderRecords(){
+  const n = {usage:S.usage.length, events:S.events.length, changes:S.changes.length};
+  $app.innerHTML = `<div class="tools">
+    <div class="tabs" role="tablist">${[["usage","使用"],["events","異常"],["changes","更換／交換"]].map(([k,v])=>`<button role="tab" data-t="${k}" class="${recTab===k?"on":""}">${v}<span>${n[k]}</span></button>`).join("")}</div>
+    <input class="search" id="q" type="search" placeholder="搜尋位置、S/N、描述" value="${esc(recQ)}">
+  </div><section class="panel" id="recbody" style="padding:0;overflow:hidden"></section>`;
+  $app.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{ recTab=b.dataset.t; renderRecords(); });
+  $("q").oninput = e => { recQ = e.target.value.trim(); renderRecordsBody(); };
+  renderRecordsBody();
+}
+
+function renderRecordsBody(){
+  let head, rows;
+  if (recTab==="usage"){
+    const L = [...S.usage].filter(u=>match(u,["date","descr","by","rate"])).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.from||"").localeCompare(a.from||""));
+    head = ["日期","使用時段","設定產氫率","有無異常","異常問題描述","記錄人",""];
+    rows = L.map(u=>`<tr class="${u.abn==="有"?"hl":""}"><td data-l="日期" class="num">${esc(u.date)}</td><td data-l="使用時段" class="num">${esc(u.from)}～${esc(u.to)}</td><td data-l="產氫率" class="num">${esc(u.rate)}%</td>
+      <td data-l="有無異常" class="${u.abn==="有"?"ng":""}">${esc(u.abn)}</td><td data-l="描述">${esc(u.descr)}</td><td data-l="記錄人">${esc(u.by)}</td><td data-l="">${delBtn("usage",u.id)}</td></tr>`);
+  } else if (recTab==="events"){
+    const L = [...S.events].filter(e=>match(e,["date","pos","descr","by"])).sort(byDateDesc);
+    head = ["日期","電堆","異常描述","記錄人",""];
+    rows = L.map(e=>`<tr><td data-l="日期" class="num">${esc(e.date)}</td><td data-l="電堆">${esc(e.pos)}</td><td data-l="描述">${esc(e.descr)}</td><td data-l="記錄人">${esc(e.by)}</td><td data-l="">${delBtn("events",e.id)}</td></tr>`);
+  } else {
+    const L = [...S.changes].filter(c=>match(c,["date","pos","reason","sn","new_sn","swap","by"])).sort(byDateDesc);
+    head = ["日期","位置","結果","原因","原 S/N","新 S/N","交換","標記","記錄人",""];
+    rows = L.map(c=>`<tr><td data-l="日期" class="num">${esc(c.date)}</td><td data-l="位置">${esc(c.pos)}</td><td data-l="結果" class="${c.result==="NG"?"ng":""}">${esc(c.result)}</td>
+      <td data-l="原因">${esc(c.reason)}</td><td data-l="原 S/N" class="sn">${esc(c.sn)}</td><td data-l="新 S/N" class="sn">${esc(c.new_sn)}</td><td data-l="交換">${esc(c.swap)}</td>
+      <td data-l="標記">${c.tag?`<span class="chip t-${c.tag}">${TAG[c.tag]}</span>`:""}</td><td data-l="記錄人">${esc(c.by)}</td><td data-l="">${delBtn("changes",c.id)}</td></tr>`);
+  }
+  $("recbody").innerHTML = rows.length
+    ? `<div class="scroll"><table class="cards"><thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`
+    : `<p class="empty" style="padding:18px 20px">${recQ?"找不到符合的紀錄。":"還沒有紀錄。到「填寫」新增第一筆。"}</p>`;
+  wireDelete();
+}
+
+// ---------- QR 與匯出 ----------
+function renderTools(){
+  const url = location.origin + location.pathname;
+  $app.innerHTML = `<div class="toolgrid">
+  <section><div class="qrbox"><div class="t">掃描記錄電堆狀況</div><div id="qr"></div><div class="u">${esc(url)}</div></div>
+    <p class="muted noprint" style="margin:10px 2px 0">按 Ctrl+P 列印這張 QR，貼在機台旁。</p></section>
+  <section class="panel noprint"><h2>匯出 Excel</h2>
+    <p class="muted" style="margin-top:0">配置、更換交換紀錄、異常紀錄、使用紀錄、建置紀錄五張表，顏色跟原本的 Excel 一樣。</p>
+    <button class="btn" data-act="export">下載 Excel</button></section>
+  </div>`;
+  $app.querySelectorAll("[data-act=export]").forEach(b=>b.onclick=exportXlsx);
+  try { new QRCode($("qr"), {text:url, width:240, height:240, correctLevel:QRCode.CorrectLevel.M}); } catch { $("qr").textContent = "QR 產生失敗，請重新整理"; }
+}
+
+function exportXlsx(){
+  if (typeof XLSX === "undefined") return toast("Excel 元件還沒載入，請稍後再試", true);
+  const fill = {removed:"A6A6A6", highv:"ED7D31", swapped:"FFC000", abnormal:"FFFF00", rupture:"FF0000", other:"7030A0"};
+  const head = {font:{bold:true}, alignment:{horizontal:"center"}};
+  const style = (ws, r, ncol, tag) => { if(!fill[tag]) return; for(let c=0;c<ncol;c++){ const a=XLSX.utils.encode_cell({r,c}); if(ws[a]) ws[a].s={fill:{fgColor:{rgb:fill[tag]}}}; } };
+  const THIN = {style:"thin", color:{rgb:"BFBFBF"}};
+  const BORDER = {top:THIN, bottom:THIN, left:THIN, right:THIN};
+  const addBorders = (ws, r0, c0, r1, c1) => { for (let r=r0;r<=r1;r++) for (let c=c0;c<=c1;c++){ const a=XLSX.utils.encode_cell({r,c}); if(!ws[a]) ws[a]={t:"s", v:""}; ws[a].s={...(ws[a].s||{}), border:BORDER}; } };
+  const wb = XLSX.utils.book_new();
+  const m = [["No.","String1","String2","String3","String4","String5"]];
+  for (let n=1;n<=10;n++) m.push([n, ...[1,2,3,4,5].map(s=>(slot(`${s}-${n}`)||{}).sn||"")]);
+  const ws1 = XLSX.utils.aoa_to_sheet(m);
+  for (let n=1;n<=10;n++) for (let s=1;s<=5;s++){ const x=slot(`${s}-${n}`); if(x&&fill[x.flag]){ const a=XLSX.utils.encode_cell({r:n,c:s}); ws1[a].s={fill:{fgColor:{rgb:fill[x.flag]}}}; } }
+  ws1["!cols"]=[{wch:5},...Array(5).fill({wch:28}),{wch:3},{wch:10},{wch:24}];
+  addBorders(ws1, 0, 0, 10, 5);
+  const legendFill = {"":"FFFFFF", ...fill};
+  XLSX.utils.sheet_add_aoa(ws1, [["顏色說明"]], {origin:{r:0, c:7}});
+  Object.entries(FLAG).forEach(([k,v], i) => {
+    const r = i + 1;
+    XLSX.utils.sheet_add_aoa(ws1, [["", v]], {origin:{r, c:7}});
+    const sw = XLSX.utils.encode_cell({r, c:7});
+    ws1[sw].s = {fill:{fgColor:{rgb:legendFill[k]||"FFFFFF"}}, border:BORDER};
+  });
+  addBorders(ws1, 0, 7, Object.keys(FLAG).length, 8);
+  const ch = [...S.changes].sort((a,b)=>-byDateDesc(a,b));
+  const ws2 = XLSX.utils.aoa_to_sheet([["時間","編號","該顆電堆狀況 NG/Pass","異常原因","原S/N","更換後新S/N","交換位置","標記","記錄人"],
+    ...ch.map(c=>[c.date,c.pos,c.result,c.reason,c.sn,c.new_sn,c.swap,TAG[c.tag]||"",c.by])]);
+  ch.forEach((c,i)=>style(ws2,i+1,9,c.tag));
+  ws2["!cols"]=[12,7,10,60,28,28,9,14,10].map(wch=>({wch}));
+  addBorders(ws2, 0, 0, ch.length, 8);
+  const ev = [...S.events].sort((a,b)=>-byDateDesc(a,b));
+  const ws3 = XLSX.utils.aoa_to_sheet([["時間","電堆","異常紀錄描述","記錄人"], ...ev.map(e=>[e.date,e.pos,e.descr,e.by])]);
+  ws3["!cols"]=[12,18,90,10].map(wch=>({wch}));
+  addBorders(ws3, 0, 0, ev.length, 3);
+  const us = [...S.usage].sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.from||"").localeCompare(b.from||""));
+  const ws4 = XLSX.utils.aoa_to_sheet([["日期","使用時段","設定產氫率(%)","有無異常","異常問題描述","記錄人"], ...us.map(u=>[u.date,`${u.from}～${u.to}`,u.rate,u.abn,u.descr,u.by])]);
+  us.forEach((u,i)=>{ if(u.abn==="有") style(ws4,i+1,6,"abnormal"); });
+  ws4["!cols"]=[12,14,14,10,60,10].map(wch=>({wch}));
+  addBorders(ws4, 0, 0, us.length, 5);
+  const bl = [...S.build].sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const ws5 = XLSX.utils.aoa_to_sheet([["時間","動作","位置","S/N","原S/N","記錄人"], ...bl.map(r=>[r.created,r.action||"建置",r.pos,r.sn,r.old_sn,r.by])]);
+  ws5["!cols"]=[20,8,7,28,28,10].map(wch=>({wch}));
+  addBorders(ws5, 0, 0, bl.length, 5);
+  for (const ws of [ws1,ws2,ws3,ws4,ws5]){ const r=XLSX.utils.decode_range(ws["!ref"]); for(let c=r.s.c;c<=r.e.c;c++){ const a=XLSX.utils.encode_cell({r:0,c}); if(ws[a]) ws[a].s={...(ws[a].s||{}), ...head}; } }
+  XLSX.utils.book_append_sheet(wb, ws1, "配置");
+  XLSX.utils.book_append_sheet(wb, ws2, "更換交換紀錄");
+  XLSX.utils.book_append_sheet(wb, ws3, "異常紀錄");
+  XLSX.utils.book_append_sheet(wb, ws4, "使用紀錄");
+  XLSX.utils.book_append_sheet(wb, ws5, "建置紀錄");
+  XLSX.writeFile(wb, `中科院_Flex120_電堆履歷_${today().replace(/-/g,"")}.xlsx`);
+}
+
+start();
+</script>
+</body>
+</html>
