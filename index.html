@@ -184,7 +184,10 @@ tr.hl td{background:color-mix(in srgb,var(--yel) 30%,transparent)}
 .dlg h2{margin:0;font-size:18px}
 .dlg .big{font:700 34px/1 var(--latin);font-variant-numeric:tabular-nums}
 .dlg .btn{width:100%}
-#reader{width:100%;min-height:240px;background:#000;border-radius:8px;overflow:hidden}
+#reader{position:relative;width:100%;aspect-ratio:3/4;max-height:58vh;background:#000;border-radius:8px;overflow:hidden}
+#reader video{width:100%;height:100%;object-fit:cover;display:block}
+#reader .aim{position:absolute;left:20%;top:25%;width:60%;height:50%;border:3px solid rgba(255,255,255,.9);border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.25);pointer-events:none}
+#reader .aim.hit{border-color:#3ddc84}
 
 /* ---------- toast ---------- */
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:9px;font-weight:600;z-index:50;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.2)}
@@ -260,7 +263,7 @@ tr.hl td{background:color-mix(in srgb,var(--yel) 30%,transparent)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="config.js"></script>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="scanner.js"></script>
 <script>
 const FLAG = {"": "正常", abnormal: "電壓過高 無法順利拉載", highv: "服役中但電壓偏高", rupture: "膜破", other: "其他異常原因"};
 const TAG = {"": "", removed: "已換下不使用", highv: "服役中電壓偏高", swapped: "交換後 PASS", abnormal: "有異常但未更換"};
@@ -368,30 +371,41 @@ function dialog(html){ $("dlg").innerHTML = html; $("ov").hidden = false; }
 function closeDlg(){ $("ov").hidden = true; $("dlg").innerHTML = ""; }
 
 // 開相機掃 QR。回傳：掃到的字串；"" = 改手動輸入；null = 取消
-function scanFormats(){
-  const F = window.Html5QrcodeSupportedFormats; if (!F) return undefined;
-  return ["QR_CODE","DATA_MATRIX","CODE_128","CODE_39","PDF_417","AZTEC"].map(k=>F[k]).filter(v=>v!==undefined);
+// 辨識引擎：Android 用系統內建 BarcodeDetector；iPhone 用 scanner.js（zxing-cpp WebAssembly）
+const SCAN_FORMATS = ["qr_code","data_matrix","code_128","code_39","pdf417","aztec"];
+let _detector = null;
+async function getDetector(){
+  if (_detector) return _detector;
+  try{
+    if ("BarcodeDetector" in window){
+      const sup = await window.BarcodeDetector.getSupportedFormats();
+      if (sup.includes("qr_code")) return _detector = new window.BarcodeDetector({formats: SCAN_FORMATS.filter(f=>sup.includes(f))});
+    }
+  }catch{}
+  if (!window.ZXBarcodeDetector) throw new Error("掃描元件沒有載入");
+  return _detector = new window.ZXBarcodeDetector({formats: SCAN_FORMATS});
 }
-function newScanner(id){
-  return new Html5Qrcode(id, {formatsToSupport: scanFormats(), experimentalFeatures:{useBarCodeDetectorIfSupported:true}, verbose:false});
-}
+
 function scanSn(title){
   return new Promise(resolve => {
-    dialog(`<h2>${esc(title)}</h2><div id="reader"></div>
-      <p class="muted" style="margin:0">把整個 QR code 放進畫面，距離約 10～20 公分，等對焦清楚。掃不到就按「拍照辨識」。</p>
+    dialog(`<h2>${esc(title)}</h2>
+      <div id="reader"><video playsinline muted autoplay></video><div class="aim"></div></div>
+      <p class="muted" id="rd_tip" style="margin:0">把 QR code 對準白框，靠近到 QR code 約佔框的一半，停一下等對焦。</p>
       <p class="muted" id="rd_err" style="margin:0;color:var(--ng)" hidden></p>
-      <button type="button" class="btn" data-r="photo">拍照辨識</button>
+      <button type="button" class="btn line" data-r="photo">拍照辨識</button>
       <input type="file" id="rd_file" accept="image/*" capture="environment" hidden>
-      <div id="rd_tmp" hidden></div>
       <button type="button" class="btn line" data-r="manual">改用手動輸入</button>
       <button type="button" class="btn line" data-r="cancel">取消</button>`);
-    let qr = null, done = false;
-    const stopLive = async () => { try { if (qr) await qr.stop(); } catch {} qr = null; };
-    const finish = async v => {
-      if (done) return; done = true;
-      await stopLive(); closeDlg(); resolve(v);
+    let stream = null, done = false, timer = null, busy = false, n = 0;
+    const video = $("dlg").querySelector("video");
+    const cv = document.createElement("canvas"), cx = cv.getContext("2d", {willReadFrequently:true});
+    const stopLive = () => { clearTimeout(timer); timer = null; if (stream) stream.getTracks().forEach(t=>t.stop()); stream = null; };
+    const finish = v => { if (done) return; done = true; stopLive(); closeDlg(); resolve(v); };
+    const got = txt => {
+      const aim = $("dlg").querySelector(".aim"); if (aim) aim.classList.add("hit");
+      if (navigator.vibrate) navigator.vibrate(120);
+      setTimeout(() => finish(String(txt).trim()), 150);
     };
-    const got = txt => { if (navigator.vibrate) navigator.vibrate(120); finish(String(txt).trim()); };
     const fail = msg => { const e=$("rd_err"); if(!e) return; e.hidden=false; e.textContent=msg; };
     const D = $("dlg");
     D.querySelector("[data-r=manual]").onclick = () => finish("");
@@ -400,18 +414,54 @@ function scanSn(title){
     $("rd_file").onchange = async e => {
       const file = e.target.files && e.target.files[0]; if (!file) return;
       fail("辨識中…");
-      try { const r = await newScanner("rd_tmp").scanFile(file, false); got(r); }
-      catch { fail("照片裡找不到 QR code。請靠近一點、避免反光，讓 QR code 佔畫面一半左右再拍一次。"); }
+      try{
+        const det = await getDetector(), bmp = await createImageBitmap(file);
+        let r = await det.detect(bmp);
+        if (!r.length){ // 大照片縮小再試一次
+          const k = Math.min(1, 1600/Math.max(bmp.width,bmp.height));
+          cv.width = Math.round(bmp.width*k); cv.height = Math.round(bmp.height*k);
+          cx.drawImage(bmp, 0, 0, cv.width, cv.height); r = await det.detect(cv);
+        }
+        if (r.length) got(r[0].rawValue); else fail("照片裡找不到 QR code。靠近一點、避開反光再拍一次。");
+      }catch(err){ fail("辨識失敗："+(err.message||err)); }
       e.target.value = "";
     };
-    if (typeof Html5Qrcode === "undefined") return fail("掃描元件沒有載入，請重新整理或改用手動輸入。");
-    qr = newScanner("reader");
-    qr.start({facingMode:"environment"},
-      {fps:15,
-       qrbox:(w,h)=>({width:Math.floor(w*0.9), height:Math.floor(h*0.9)}),
-       videoConstraints:{facingMode:"environment", width:{ideal:1920}, height:{ideal:1080}, advanced:[{focusMode:"continuous"}]}},
-      got, () => {}
-    ).catch(err => { qr = null; fail("無法開啟相機："+(err && err.message || err)+"。可以改用「拍照辨識」或手動輸入。"); });
+
+    // 每一輪輪流辨識：整個畫面 / 白框區域放大
+    const tick = async () => {
+      if (done || !stream) return;
+      if (!busy && video.readyState >= 2 && video.videoWidth){
+        busy = true;
+        try{
+          const det = await getDetector(), vw = video.videoWidth, vh = video.videoHeight;
+          if (n++ % 2 === 0){
+            cv.width = vw; cv.height = vh; cx.drawImage(video, 0, 0);
+          } else {
+            const sw = vw*0.6, sh = vh*0.5, sx = (vw-sw)/2, sy = (vh-sh)/2, k = Math.min(2, 1600/sw);
+            cv.width = Math.round(sw*k); cv.height = Math.round(sh*k);
+            cx.drawImage(video, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+          }
+          const r = await det.detect(cv);
+          if (r.length && r[0].rawValue){ busy = false; return got(r[0].rawValue); }
+        }catch(err){ fail("辨識錯誤："+(err.message||err)); }
+        busy = false;
+      }
+      timer = setTimeout(tick, 120);
+    };
+
+    (async () => {
+      try{
+        getDetector().catch(()=>{}); // 先載入辨識引擎
+        stream = await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080}}});
+        if (done){ stopLive(); return; }
+        const track = stream.getVideoTracks()[0];
+        try { await track.applyConstraints({advanced:[{focusMode:"continuous"}]}); } catch {}
+        video.srcObject = stream; await video.play().catch(()=>{});
+        tick();
+      }catch(err){
+        fail("無法開啟相機："+(err && err.message || err)+"。可以改用「拍照辨識」或手動輸入。");
+      }
+    })();
   });
 }
 
