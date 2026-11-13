@@ -390,9 +390,10 @@ function scanSn(title){
   return new Promise(resolve => {
     dialog(`<h2>${esc(title)}</h2>
       <div id="reader"><video playsinline muted autoplay></video><div class="aim"></div></div>
-      <p class="muted" id="rd_tip" style="margin:0">把 QR code 對準白框，靠近到 QR code 約佔框的一半，停一下等對焦。</p>
+      <p class="muted" id="rd_tip" style="margin:0">QR code 放進白框就好，不用滿版。距離約 15～30 公分、畫面清楚最重要。<span id="rd_cam"></span></p>
+      <button type="button" class="btn line" data-r="switch" hidden>切換鏡頭</button>
       <p class="muted" id="rd_err" style="margin:0;color:var(--ng)" hidden></p>
-      <button type="button" class="btn line" data-r="photo">拍照辨識</button>
+      <button type="button" class="btn" data-r="photo">拍照辨識（用手機相機拍，會自動對焦）</button>
       <input type="file" id="rd_file" accept="image/*" capture="environment" hidden>
       <button type="button" class="btn line" data-r="manual">改用手動輸入</button>
       <button type="button" class="btn line" data-r="cancel">取消</button>`);
@@ -434,10 +435,12 @@ function scanSn(title){
         busy = true;
         try{
           const det = await getDetector(), vw = video.videoWidth, vh = video.videoHeight;
-          if (n++ % 2 === 0){
+          const m = n++ % 3;
+          if (m === 0){
             cv.width = vw; cv.height = vh; cx.drawImage(video, 0, 0);
           } else {
-            const sw = vw*0.6, sh = vh*0.5, sx = (vw-sw)/2, sy = (vh-sh)/2, k = Math.min(2, 1600/sw);
+            const f = m === 1 ? 0.6 : 0.33; // 白框區域 / 中央小區域，放大辨識
+            const sw = vw*f, sh = vh*f, sx = (vw-sw)/2, sy = (vh-sh)/2, k = Math.min(3, 1600/sw);
             cv.width = Math.round(sw*k); cv.height = Math.round(sh*k);
             cx.drawImage(video, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
           }
@@ -449,16 +452,46 @@ function scanSn(title){
       timer = setTimeout(tick, 120);
     };
 
+    // 選鏡頭：iPhone 優先用「三鏡頭/雙廣角」虛擬相機（近拍會自動切微距、會自動對焦）
+    let cams = [], camIdx = -1;
+    const PREF = /triple|dual wide|三鏡頭|雙廣角|双广角|三镜头/i, BACK = /back|rear|environment|後|后/i, BAD = /front|前|telephoto|長焦|长焦/i;
+    const open = async deviceId => {
+      stopLive();
+      const v = {width:{ideal:1920}, height:{ideal:1080}};
+      if (deviceId) v.deviceId = {exact:deviceId}; else v.facingMode = {ideal:"environment"};
+      stream = await navigator.mediaDevices.getUserMedia({audio:false, video:v});
+      if (done){ stopLive(); return; }
+      const track = stream.getVideoTracks()[0];
+      try { await track.applyConstraints({advanced:[{focusMode:"continuous"}]}); } catch {}
+      video.srcObject = stream; await video.play().catch(()=>{});
+      const c = $("rd_cam"); if (c) c.textContent = track.label ? `（目前：${track.label}）` : "";
+      return track;
+    };
+    D.querySelector("[data-r=switch]").onclick = async () => {
+      if (!cams.length) return;
+      camIdx = (camIdx + 1) % cams.length;
+      ls.set("camId", cams[camIdx].deviceId);
+      try { await open(cams[camIdx].deviceId); tick(); } catch(err){ fail("切換失敗："+(err.message||err)); }
+    };
+
     (async () => {
       try{
         getDetector().catch(()=>{}); // 先載入辨識引擎
-        stream = await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080}}});
-        if (done){ stopLive(); return; }
-        const track = stream.getVideoTracks()[0];
-        try { await track.applyConstraints({advanced:[{focusMode:"continuous"}]}); } catch {}
-        video.srcObject = stream; await video.play().catch(()=>{});
+        const track = await open(ls.get("camId") || null);
+        if (done) return;
+        const all = (await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="videoinput");
+        cams = all.filter(d=>!/front|前/i.test(d.label));
+        if (!cams.length) cams = all;
+        if (cams.length > 1) D.querySelector("[data-r=switch]").hidden = false;
+        const cur = track && track.getSettings().deviceId;
+        camIdx = Math.max(0, cams.findIndex(d=>d.deviceId===cur));
+        if (!ls.get("camId")){
+          const best = cams.findIndex(d=>PREF.test(d.label));
+          if (best >= 0 && cams[best].deviceId !== cur){ camIdx = best; await open(cams[best].deviceId); }
+        }
         tick();
       }catch(err){
+        ls.del("camId");
         fail("無法開啟相機："+(err && err.message || err)+"。可以改用「拍照辨識」或手動輸入。");
       }
     })();
