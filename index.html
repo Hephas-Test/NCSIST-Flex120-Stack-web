@@ -368,28 +368,50 @@ function dialog(html){ $("dlg").innerHTML = html; $("ov").hidden = false; }
 function closeDlg(){ $("ov").hidden = true; $("dlg").innerHTML = ""; }
 
 // 開相機掃 QR。回傳：掃到的字串；"" = 改手動輸入；null = 取消
+function scanFormats(){
+  const F = window.Html5QrcodeSupportedFormats; if (!F) return undefined;
+  return ["QR_CODE","DATA_MATRIX","CODE_128","CODE_39","PDF_417","AZTEC"].map(k=>F[k]).filter(v=>v!==undefined);
+}
+function newScanner(id){
+  return new Html5Qrcode(id, {formatsToSupport: scanFormats(), experimentalFeatures:{useBarCodeDetectorIfSupported:true}, verbose:false});
+}
 function scanSn(title){
   return new Promise(resolve => {
     dialog(`<h2>${esc(title)}</h2><div id="reader"></div>
-      <p class="muted" id="rd_err" style="margin:0" hidden></p>
+      <p class="muted" style="margin:0">把整個 QR code 放進畫面，距離約 10～20 公分，等對焦清楚。掃不到就按「拍照辨識」。</p>
+      <p class="muted" id="rd_err" style="margin:0;color:var(--ng)" hidden></p>
+      <button type="button" class="btn" data-r="photo">拍照辨識</button>
+      <input type="file" id="rd_file" accept="image/*" capture="environment" hidden>
+      <div id="rd_tmp" hidden></div>
       <button type="button" class="btn line" data-r="manual">改用手動輸入</button>
       <button type="button" class="btn line" data-r="cancel">取消</button>`);
     let qr = null, done = false;
+    const stopLive = async () => { try { if (qr) await qr.stop(); } catch {} qr = null; };
     const finish = async v => {
       if (done) return; done = true;
-      try { if (qr) await qr.stop(); } catch {}
-      closeDlg(); resolve(v);
+      await stopLive(); closeDlg(); resolve(v);
     };
-    $("dlg").querySelector("[data-r=manual]").onclick = () => finish("");
-    $("dlg").querySelector("[data-r=cancel]").onclick = () => finish(null);
+    const got = txt => { if (navigator.vibrate) navigator.vibrate(120); finish(String(txt).trim()); };
     const fail = msg => { const e=$("rd_err"); if(!e) return; e.hidden=false; e.textContent=msg; };
+    const D = $("dlg");
+    D.querySelector("[data-r=manual]").onclick = () => finish("");
+    D.querySelector("[data-r=cancel]").onclick = () => finish(null);
+    D.querySelector("[data-r=photo]").onclick = () => $("rd_file").click();
+    $("rd_file").onchange = async e => {
+      const file = e.target.files && e.target.files[0]; if (!file) return;
+      fail("辨識中…");
+      try { const r = await newScanner("rd_tmp").scanFile(file, false); got(r); }
+      catch { fail("照片裡找不到 QR code。請靠近一點、避免反光，讓 QR code 佔畫面一半左右再拍一次。"); }
+      e.target.value = "";
+    };
     if (typeof Html5Qrcode === "undefined") return fail("掃描元件沒有載入，請重新整理或改用手動輸入。");
-    qr = new Html5Qrcode("reader");
+    qr = newScanner("reader");
     qr.start({facingMode:"environment"},
-      {fps:10, qrbox:(w,h)=>{ const s=Math.floor(Math.min(w,h)*0.7); return {width:s,height:s}; }},
-      txt => { if (navigator.vibrate) navigator.vibrate(120); finish(String(txt).trim()); },
-      () => {}
-    ).catch(err => { qr = null; fail("無法開啟相機："+(err && err.message || err)+"。請確認是 https 網址並允許相機權限，或改用手動輸入。"); });
+      {fps:15,
+       qrbox:(w,h)=>({width:Math.floor(w*0.9), height:Math.floor(h*0.9)}),
+       videoConstraints:{facingMode:"environment", width:{ideal:1920}, height:{ideal:1080}, advanced:[{focusMode:"continuous"}]}},
+      got, () => {}
+    ).catch(err => { qr = null; fail("無法開啟相機："+(err && err.message || err)+"。可以改用「拍照辨識」或手動輸入。"); });
   });
 }
 
