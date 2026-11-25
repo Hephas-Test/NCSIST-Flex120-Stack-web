@@ -189,6 +189,20 @@ tr.hl td{background:color-mix(in srgb,var(--yel) 30%,transparent)}
 #reader .aim{position:absolute;left:20%;top:25%;width:60%;height:50%;border:3px solid rgba(255,255,255,.9);border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.25);pointer-events:none}
 #reader .aim.hit{border-color:#3ddc84}
 
+/* ---------- 作業紀錄 ---------- */
+.wl-thumbs{display:flex;flex-wrap:wrap;gap:8px}
+.wl-thumbs .ph{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;background:var(--sunk);border:1px solid var(--line);padding:0;cursor:pointer}
+.wl-thumbs .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.wl-thumbs .ph .x{position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;border:0;font-size:15px;line-height:24px;padding:0;cursor:pointer}
+.wl-item{display:grid;gap:6px;padding:12px 0;border-bottom:1px solid var(--line)}
+.wl-item:last-child{border-bottom:0}
+.wl-item .meta{font-size:12px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.wl-item .txt{font-size:14.5px;white-space:pre-wrap;word-break:break-word}
+.wl-item .wl-thumbs .ph{width:68px;height:68px}
+.wl-full{width:100%;border-radius:8px;display:block;background:var(--sunk)}
+.wlwrap{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.wlwrap{grid-template-columns:1fr}}
+
 /* ---------- toast ---------- */
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:9px;font-weight:600;z-index:50;max-width:90vw;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 .toast.err{background:var(--ng);color:#fff}
@@ -286,7 +300,9 @@ const IC = {
   event:'<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>',
   replace:'<path d="M4 4v6h6M20 20v-6h-6"/><path d="M20 10A8 8 0 0 0 6 5.3L4 10M4 14a8 8 0 0 0 14 4.7l2-4.7"/>',
   swap:'<path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
-  build:'<path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M7 12h10"/>'
+  build:'<path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M7 12h10"/>',
+  worklog:'<path d="M9 5h11M9 12h11M9 19h11"/><path d="m3 5 1.5 1.5L7 4M3 12l1.5 1.5L7 11M3 19l1.5 1.5L7 18"/>',
+  issues:'<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'
 };
 const icon = (k, sw=1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`;
 const PAGES = [
@@ -294,6 +310,8 @@ const PAGES = [
   ["fill","填寫","新增紀錄","掃 QR 進來的人從這裡開始：選類型、填寫、送出。"],
   ["map","配置總表","電堆配置總表","5 串 × 10 位。點任一位置查看履歷、修改狀態或修正 S/N。"],
   ["records","紀錄","紀錄","使用、異常、更換與交換的所有紀錄。"],
+  ["worklog","建置流程","建置流程","照步驟逐項完成，每一步可以寫紀錄、加照片。可以匯出成含照片的 Excel。"],
+  ["issues","建置異常","建置異常","建置期間遇到的異常，附照片記錄。狀態可以隨時改成「已解決」或「未解決」。"],
   ["tools","QR 與匯出","QR 與匯出","列印現場用的 QR Code，或把全部資料匯出成 Excel。"]
 ];
 
@@ -301,7 +319,7 @@ function toast(msg, err){ const t=$("toast"); t.textContent=msg; t.className="to
 
 const ROOM_ID = window.SPACE_ID || "flex120-unit2"; // 第二台的資料路徑，跟第一台分開
 const TOTAL = 50;
-let fs, root, S = {slots:[], changes:[], events:[], usage:[], build:[], meta:[]}, unsubs = [];
+let fs, root, S = {slots:[], changes:[], events:[], usage:[], build:[], meta:[], worklog:[]}, unsubs = [];
 const col = n => root.collection(n);
 
 // ---------- 啟動 ----------
@@ -323,7 +341,7 @@ function showError(title, msg){
 function connect(){
   unsubs.forEach(u=>u()); unsubs=[];
   root = fs.collection("space").doc(ROOM_ID);
-  let first = true; const loaded = {slots:false,changes:false,events:false,usage:false,build:false,meta:false};
+  let first = true; const loaded = {slots:false,changes:false,events:false,usage:false,build:false,meta:false,worklog:false};
   for (const name of Object.keys(loaded)){
     unsubs.push(col(name).onSnapshot(snap => {
       S[name] = snap.docs.map(d => ({id:d.id, ...d.data()}));
@@ -344,7 +362,8 @@ window.addEventListener("hashchange", () => { render(); window.scrollTo(0,0); })
 
 // 建置模式：50 個位置沒填滿前只顯示「建置」；填滿後變成原本的四個頁面
 const isBuilt = () => S.meta.some(m => m.id==="state" && m.built);
-const availPages = () => isBuilt() ? PAGES.filter(p=>p[0]!=="build") : PAGES.filter(p=>p[0]==="build");
+// 作業紀錄兩種模式都有
+const availPages = () => isBuilt() ? PAGES.filter(p=>p[0]!=="build") : PAGES.filter(p=>["build","worklog","issues"].includes(p[0]));
 let navMode = null;
 function renderNav(){
   const P = availPages();
@@ -363,7 +382,285 @@ function render(){
   document.querySelectorAll("[data-p]").forEach(a => a.classList.toggle("on", a.dataset.p===page));
   const P = PAGES.find(p=>p[0]===page);
   $("top").innerHTML = `<div><h1>${P[2]}</h1><p>${P[3]}</p></div>`;
-  ({build:renderBuild, fill:renderFill, map:renderMap, records:renderRecords, tools:renderTools}[page])();
+  ({build:renderBuild, fill:renderFill, map:renderMap, records:renderRecords, worklog:renderSteps, issues:renderIssues, tools:renderTools}[page])();
+}
+
+// ---------- 建置流程 & 建置異常 ----------
+// worklog 集合：kind="step"（某個流程步驟的作業紀錄，step=步驟編號）或 kind="issue"（建置異常）
+// 照片：縮圖存在紀錄裡（列表用），大圖另存在 photos（看大圖、匯出 Excel 用）
+// 步驟完成狀態存在 meta/steps：{ s1:{by,at}, s2:null, ... }
+const STEPS = [
+  "軟體先確認 DAQ 資料都正確回報（溫度、流量等）",
+  "加抗凍液 15L 並設定冰水機（SV=2 度）",
+  "上堆",
+  "鎖 U 型管",
+  "清洗循環桶（滿水三次）",
+  "清洗循環泵後過濾器",
+  "循環泵排氣",
+  "散熱扇排氣（需至上方加水）",
+  "設備先運行 DI 水循環（String1～5 都要開，不然水泵出口壓力過大）",
+  "開工程模式，強制讓水泵運行在 10Hz，讓設備排氣運行",
+  "升溫到 40 度，水泵 60% 運行",
+  "加鹼粉（3 又 3/4 罐），40 度 @50% 潤洗設備管路",
+  "開始產氫飽壓，用測漏液跟氫氣 sensor 查漏",
+  "運行到 100% 產氫"
+];
+const MAX_PHOTOS = 10;
+const stepState = () => (S.meta.find(m=>m.id==="steps") || {});
+const stepDone = n => stepState()["s"+n] || null;
+const wlOf = kind => S.worklog.filter(r=>(r.kind||"step")===kind);
+
+// 表單草稿（快照重繪時保留）
+let wlOpen = 0;                                        // 目前展開的步驟
+const drafts = {};                                     // key -> {text,pos,date,photos,saving}
+const wdraft = k => drafts[k] || (drafts[k] = {text:"", pos:"", date:"", photos:[], saving:false});
+
+function loadImg(src){ return new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=src; }); }
+async function compressImage(file, maxDim, q){
+  let src, w, h, url = null;
+  try { src = await createImageBitmap(file, {imageOrientation:"from-image"}); w = src.width; h = src.height; }
+  catch { url = URL.createObjectURL(file); src = await loadImg(url); w = src.naturalWidth; h = src.naturalHeight; }
+  const k = Math.min(1, maxDim/Math.max(w,h));
+  const c = document.createElement("canvas"); c.width = Math.round(w*k); c.height = Math.round(h*k);
+  c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+  if (url) URL.revokeObjectURL(url);
+  return {data: c.toDataURL("image/jpeg", q), w: c.width, h: c.height};
+}
+
+// 共用：一筆紀錄的顯示
+function entryHtml(r, extra="", after=""){
+  return `<div class="wl-item">
+    <div class="meta"><b style="color:var(--fg)">${esc(r.date)}</b><span>${esc((r.created||"").split(" ").pop().slice(0,5))}</span>${r.by?`<span>${esc(r.by)}</span>`:""}${r.pos?`<span>位置 ${esc(r.pos)}</span>`:""}${extra}
+      <button type="button" class="btn line sm" data-del="${r.id}" style="margin-left:auto;padding:4px 10px;font-size:12px">刪除</button></div>
+    ${r.text?`<div class="txt">${esc(r.text)}</div>`:""}
+    ${(r.thumbs||[]).length?`<div class="wl-thumbs">${r.thumbs.map((t,i)=>`<button type="button" class="ph" data-view="${r.id}" data-i="${i}"><img src="${t}" alt="照片 ${i+1}"></button>`).join("")}</div>`:""}
+    ${after}
+  </div>`;
+}
+// 共用：輸入表單（文字＋照片）
+function formHtml(k, o){
+  const d = wdraft(k);
+  return `<div class="wl-form" data-k="${k}" style="display:grid;gap:10px">
+    ${o.date?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label>日期<input type="date" data-f="date" value="${esc(d.date||today())}"></label><label>位置（選填）<input data-f="pos" value="${esc(d.pos)}" placeholder="例：1-3"></label></div>`:""}
+    <label>${o.label}<textarea data-f="text" placeholder="${esc(o.ph)}">${esc(d.text)}</textarea></label>
+    ${d.photos.length?`<div class="wl-thumbs">${d.photos.map((p,i)=>`<div class="ph"><img src="${p.thumb.data}" alt=""><button type="button" class="x" data-rm="${i}" aria-label="移除">×</button></div>`).join("")}</div>`:""}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button type="button" class="btn line" data-act="addph" ${d.photos.length>=MAX_PHOTOS?"disabled":""}>拍照／選照片（${d.photos.length}/${MAX_PHOTOS}）</button>
+      <button type="button" class="btn" data-act="save" ${d.saving?"disabled":""}>${d.saving?"儲存中…":o.save}</button>
+    </div>
+    <input type="file" accept="image/*" multiple hidden data-f="file">
+  </div>`;
+}
+function byHtml(){
+  return `<label>記錄人<input id="wl_by" value="${esc(ls.get("by"))}" placeholder="姓名" autocomplete="name"></label>`;
+}
+const curBy = () => (($("wl_by")||{}).value || ls.get("by") || "").trim();
+
+// 綁定：表單、刪除、看照片、匯出
+function bindWl(rerender, makeDoc){
+  if ($("wl_by")) $("wl_by").oninput = e => ls.set("by", e.target.value.trim());
+  $app.querySelectorAll(".wl-form").forEach(f => {
+    const k = f.dataset.k, d = wdraft(k);
+    f.querySelectorAll("[data-f=text],[data-f=pos],[data-f=date]").forEach(i => i.oninput = i.onchange = () => d[i.dataset.f] = i.value);
+    const file = f.querySelector("[data-f=file]");
+    f.querySelector("[data-act=addph]").onclick = () => file.click();
+    file.onchange = async e => {
+      const files = [...(e.target.files||[])].slice(0, MAX_PHOTOS - d.photos.length); e.target.value = "";
+      if (!files.length) return;
+      toast(`處理照片中…（${files.length} 張）`);
+      for (const fl of files){
+        try { d.photos.push({thumb: await compressImage(fl, 240, 0.6), full: await compressImage(fl, 1600, 0.72)}); }
+        catch { toast("有一張照片讀不到，已略過", true); }
+      }
+      rerender();
+    };
+    f.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { d.photos.splice(+b.dataset.rm, 1); rerender(); });
+    f.querySelector("[data-act=save]").onclick = async () => {
+      const by = curBy();
+      if (!by){ toast("請填記錄人", true); if ($("wl_by")) $("wl_by").focus(); return; }
+      if (!d.text.trim() && !d.photos.length){ toast("請寫內容或加照片", true); return; }
+      ls.set("by", by); d.saving = true; rerender();
+      try{
+        const b = fs.batch(), ids = [], now = nowStr();
+        for (const p of d.photos){ const ref = col("photos").doc(); ids.push(ref.id); b.set(ref, {data:p.full.data, w:p.full.w, h:p.full.h, created:now}); }
+        b.set(col("worklog").doc(), {...makeDoc(k, d), by, date: d.date || today(), pos: (d.pos||"").trim(), text: d.text.trim(),
+          thumbs: d.photos.map(p=>p.thumb.data), photoIds: ids, created: now, ts: Date.now()});
+        await b.commit();
+        drafts[k] = {text:"", pos:"", date:d.date, photos:[], saving:false};
+        toast("已儲存"); rerender();
+      }catch(err){ d.saving = false; toast("儲存失敗："+err.message, true); rerender(); }
+    };
+  });
+  $app.querySelectorAll("[data-view]").forEach(b => b.onclick = () => viewPhoto(b.dataset.view, +b.dataset.i));
+  $app.querySelectorAll("[data-del]").forEach(b => b.onclick = function(){
+    if (this.dataset.y !== "1"){ this.dataset.y = "1"; this.textContent = "再按一次刪除"; return; }
+    const r = S.worklog.find(x=>x.id===this.dataset.del); if (!r) return;
+    const bt = fs.batch();
+    (r.photoIds||[]).forEach(id => bt.delete(col("photos").doc(id)));
+    bt.delete(col("worklog").doc(r.id));
+    bt.commit().then(()=>toast("已刪除")).catch(err=>toast("刪除失敗："+err.message, true));
+  });
+  $app.querySelectorAll("[data-act=wlexport]").forEach(b => b.onclick = () => exportWorklog(b));
+}
+
+// ----- 建置流程頁 -----
+function renderSteps(){
+  const doneN = STEPS.filter((_,i)=>stepDone(i+1)).length;
+  const cards = STEPS.map((t,i) => {
+    const n = i+1, dn = stepDone(n), recs = wlOf("step").filter(r=>r.step===n).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const nph = recs.reduce((a,r)=>a+(r.photoIds||[]).length, 0), open = wlOpen===n;
+    return `<div class="panel" style="padding:0;overflow:hidden;${dn?"border-color:var(--ok-fg)":""}">
+      <button type="button" data-open="${n}" style="all:unset;box-sizing:border-box;display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;width:100%;padding:14px 16px;cursor:pointer">
+        <span style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;${dn?"background:var(--ok);color:var(--ok-fg)":"background:var(--sunk);color:var(--muted)"}">${dn?"✓":n}</span>
+        <span style="display:grid;gap:3px"><b style="font-size:15px;font-weight:600">${esc(t)}</b>
+          <span class="muted" style="font-size:12px">${dn?`已完成　${esc(dn.by||"")}　${esc(dn.at||"")}`:"未完成"}${recs.length?`　·　${recs.length} 筆紀錄`:""}${nph?`　·　${nph} 張照片`:""}</span></span>
+        <span class="muted" style="font-size:18px">${open?"▾":"▸"}</span>
+      </button>
+      ${open?`<div style="padding:0 16px 16px;display:grid;gap:12px;border-top:1px solid var(--line)">
+        <div>${recs.map(r=>entryHtml(r)).join("") || `<p class="empty" style="margin:12px 0 0">這一步還沒有紀錄。</p>`}</div>
+        ${formHtml("step"+n, {label:"作業紀錄", ph:"例：抗凍液已加 15L，冰水機 SV 設定 2 度", save:"儲存紀錄"})}
+        <button type="button" class="btn ${dn?"line":""}" data-done="${n}">${dn?"取消完成":"✓ 標記這一步完成"}</button>
+      </div>`:""}
+    </div>`;
+  }).join("");
+  $app.innerHTML = `<div style="display:grid;gap:12px;max-width:860px">
+    <section class="panel" style="display:grid;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">流程進度　${doneN} / ${STEPS.length}</h2>
+        <button type="button" class="btn sm" data-act="wlexport" style="margin-left:auto">匯出 Excel（含照片）</button></div>
+      <div class="pbar"><i style="width:${doneN/STEPS.length*100}%"></i></div>
+      ${byHtml()}
+      <p class="muted" style="margin:0">點任一步驟展開，可以寫紀錄、加照片、標記完成。有異常請到「建置異常」記錄。</p>
+    </section>
+    ${cards}
+  </div>`;
+  $app.querySelectorAll("[data-open]").forEach(b => b.onclick = () => { const n=+b.dataset.open; wlOpen = wlOpen===n ? 0 : n; renderSteps(); });
+  $app.querySelectorAll("[data-done]").forEach(b => b.onclick = async () => {
+    const n = +b.dataset.done, by = curBy();
+    if (!stepDone(n) && !by){ toast("請填記錄人", true); return $("wl_by").focus(); }
+    try{
+      await col("meta").doc("steps").set({["s"+n]: stepDone(n) ? null : {by, at: nowStr()}}, {merge:true});
+      if (!stepDone(n)) toast(`步驟 ${n} 已完成`);
+    }catch(err){ toast("更新失敗："+err.message, true); }
+  });
+  bindWl(renderSteps, k => ({kind:"step", step: +k.replace("step","")}));
+}
+
+// ----- 建置異常頁 -----
+function renderIssues(){
+  const list = wlOf("issue").sort((a,b)=>(b.date||"").localeCompare(a.date||"") || (b.ts||0)-(a.ts||0));
+  const solved = r => r.status==="已解決" || r.status==="已處理";
+  const open = list.filter(r=>!solved(r)).length;
+  const items = list.map(r => entryHtml(r,
+      `<button type="button" class="chip ${solved(r)?"t-":"t-rupture"}" data-st="${r.id}" style="border:0;cursor:pointer" title="點一下修改狀態">${solved(r)?"✓ 已解決":"● 未解決"} ▾</button>`,
+      r.handle?`<div class="muted" style="font-size:13px">處理：${esc(r.handle)}${r.handledBy?`（${esc(r.handledBy)} ${esc(r.handledAt||"")}）`:""}</div>`:"")).join("") || `<p class="empty">還沒有異常紀錄。</p>`;
+  $app.innerHTML = `<div class="wlwrap">
+    <section class="panel" style="display:grid;gap:12px;align-content:start">
+      <h2 style="margin:0">新增建置異常</h2>
+      ${byHtml()}
+      ${formHtml("issue", {date:true, label:"異常描述", ph:"例：String3 流量偏低，循環泵後過濾器有雜質", save:"儲存異常"})}
+    </section>
+    <section class="panel" style="display:grid;gap:10px;align-content:start">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">異常紀錄（未解決 ${open} / 共 ${list.length}）</h2>
+        <button type="button" class="btn sm" data-act="wlexport" style="margin-left:auto">匯出 Excel（含照片）</button></div>
+      <p class="muted" style="margin:0;font-size:12.5px">點狀態標籤可以改成「已解決」或「未解決」，並填寫處理方式。</p>
+      <div>${items}</div>
+    </section></div>`;
+  $app.querySelectorAll("[data-st]").forEach(b => b.onclick = () => {
+    const r = S.worklog.find(x=>x.id===b.dataset.st); if (!r) return;
+    const isS = solved(r);
+    dialog(`<h2>修改異常狀態</h2>
+      <div class="muted" style="font-size:13px">${esc(r.date)}　${esc(r.text||"").slice(0,60)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label class="ck" style="border:1px solid var(--line);border-radius:8px;padding:10px"><input type="radio" name="st_v" value="未解決" ${isS?"":"checked"}>未解決</label>
+        <label class="ck" style="border:1px solid var(--line);border-radius:8px;padding:10px"><input type="radio" name="st_v" value="已解決" ${isS?"checked":""}>已解決</label>
+      </div>
+      <label>處理方式（選填）<textarea id="st_h" placeholder="例：更換過濾器後流量恢復">${esc(r.handle||"")}</textarea></label>
+      <button class="btn" id="st_go">儲存</button><button class="btn line" id="st_x">取消</button>`);
+    $("st_x").onclick = closeDlg;
+    $("st_go").onclick = () => {
+      const v = $("dlg").querySelector("[name=st_v]:checked").value;
+      col("worklog").doc(r.id).update({status:v, handle:$("st_h").value.trim(), handledBy:curBy(), handledAt:nowStr()})
+        .then(()=>{ closeDlg(); toast("狀態已改為「"+v+"」"); }).catch(err=>toast("更新失敗："+err.message,true));
+    };
+  });
+  bindWl(renderIssues, () => ({kind:"issue", status:"未解決"}));
+}
+
+async function getPhoto(id){
+  const d = await col("photos").doc(id).get();
+  return d.exists ? d.data() : null;
+}
+async function viewPhoto(rid, i){
+  const r = S.worklog.find(x=>x.id===rid); if (!r) return;
+  dialog(`<h2>照片 ${i+1} / ${(r.photoIds||[]).length}</h2><img class="wl-full" id="vp_img" src="${(r.thumbs||[])[i]||""}" alt="">
+    <p class="muted" id="vp_tip" style="margin:0">載入原圖中…</p><button class="btn line" id="vp_x">關閉</button>`);
+  $("vp_x").onclick = closeDlg;
+  try{ const p = await getPhoto(r.photoIds[i]); if (p && $("vp_img")){ $("vp_img").src = p.data; $("vp_tip").textContent = `${r.date}　${r.by||""}`; } }
+  catch(err){ if ($("vp_tip")) $("vp_tip").textContent = "原圖載入失敗："+err.message; }
+}
+function loadScript(src){
+  return new Promise((ok,no)=>{ const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=()=>no(new Error("載入失敗："+src)); document.head.appendChild(s); });
+}
+
+// ----- 匯出：一個 Excel，兩張表（建置流程、建置異常），照片直接嵌在格子裡 -----
+async function exportWorklog(btn){
+  const label = btn ? btn.textContent : "";
+  if (btn){ btn.disabled = true; btn.textContent = "匯出中…"; }
+  try{
+    if (!window.ExcelJS) await loadScript("exceljs.min.js");
+    const wb = new ExcelJS.Workbook();
+    const IMG_H = 150, COL_W = 30, MAXW = 205; // px
+    const border = {top:{style:"thin"}, left:{style:"thin"}, bottom:{style:"thin"}, right:{style:"thin"}};
+    let nPh = 0;
+    const sheet = async (name, cols, rows) => {
+      const maxP = Math.max(0, ...rows.map(r=>(r.photoIds||[]).length));
+      const ws = wb.addWorksheet(name);
+      ws.columns = [...cols, ...Array.from({length:maxP}, (_,i)=>({header:`照片${i+1}`, key:`p${i}`, width:COL_W}))];
+      const head = ws.getRow(1); head.height = 22;
+      head.eachCell(c => { c.font = {bold:true, color:{argb:"FFFFFFFF"}}; c.fill = {type:"pattern", pattern:"solid", fgColor:{argb:"FF1D3A55"}}; c.alignment = {vertical:"middle", horizontal:"center"}; c.border = border; });
+      for (const r of rows){
+        const row = ws.addRow(r.cells), n = (r.photoIds||[]).length, rowIdx = row.number - 1;
+        const textLen = Math.max(...Object.values(r.cells).map(v=>String(v||"").length), 1);
+        row.height = n ? IMG_H*0.75 + 8 : Math.max(20, Math.ceil(textLen/24)*15);
+        for (let c=1; c<=cols.length+maxP; c++){ const cell = row.getCell(c); cell.border = border; cell.alignment = {vertical:"top", wrapText:true}; }
+        if (r.fill) for (let c=1; c<=cols.length; c++) row.getCell(c).fill = {type:"pattern", pattern:"solid", fgColor:{argb:r.fill}};
+        for (let j=0; j<n; j++){
+          const p = await getPhoto(r.photoIds[j]); nPh++;
+          if (btn) btn.textContent = `匯出中…（照片 ${nPh}）`;
+          if (!p) continue;
+          let h = IMG_H, w = Math.round(IMG_H*(p.w||4)/(p.h||3));
+          if (w > MAXW){ h = Math.round(h*MAXW/w); w = MAXW; }
+          const id = wb.addImage({base64:p.data, extension:"jpeg"});
+          ws.addImage(id, {tl:{col: cols.length + j + 0.05, row: rowIdx + 0.05}, ext:{width:w, height:h}, editAs:"oneCell"});
+        }
+      }
+      ws.views = [{state:"frozen", ySplit:1}];
+    };
+    // 建置流程：每一步一列總覽（完成狀態），底下接該步驟的每筆紀錄
+    const stepRows = [];
+    STEPS.forEach((t,i) => {
+      const n = i+1, dn = stepDone(n);
+      const recs = wlOf("step").filter(r=>r.step===n).sort((a,b)=>(a.ts||0)-(b.ts||0));
+      stepRows.push({cells:{no:n, step:t, st: dn?"已完成":"未完成", who: dn?dn.by||"":"", at: dn?dn.at||"":"", text:""}, fill: dn?"FFE6F5EC":"FFF3F4F6"});
+      recs.forEach(r => stepRows.push({cells:{no:"", step:"　└ 紀錄", st:"", who:r.by||"", at:`${r.date} ${(r.created||"").split(" ").pop().slice(0,5)}`, text:r.text||""}, photoIds:r.photoIds}));
+    });
+    await sheet("建置流程", [
+      {header:"步驟", key:"no", width:6}, {header:"項目", key:"step", width:40}, {header:"狀態", key:"st", width:8},
+      {header:"人員", key:"who", width:10}, {header:"時間", key:"at", width:18}, {header:"紀錄內容", key:"text", width:40}], stepRows);
+    const iss = wlOf("issue").sort((a,b)=>(a.date||"").localeCompare(b.date||"") || (a.ts||0)-(b.ts||0));
+    await sheet("建置異常", [
+      {header:"日期", key:"date", width:12}, {header:"時間", key:"time", width:7}, {header:"記錄人", key:"by", width:10},
+      {header:"位置", key:"pos", width:8}, {header:"異常描述", key:"text", width:40}, {header:"狀態", key:"st", width:8},
+      {header:"處理方式", key:"handle", width:30}], iss.map(r => ({cells:{date:r.date, time:(r.created||"").split(" ").pop().slice(0,5), by:r.by||"", pos:r.pos||"",
+        text:r.text||"", st:(r.status==="已處理"?"已解決":r.status)||"未解決", handle:r.handle||""}, photoIds:r.photoIds})));
+    const buf = await wb.xlsx.writeBuffer();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([buf], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+    a.download = `中科院_Flex120_建置紀錄_${today().replace(/-/g,"")}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast("已匯出");
+  }catch(err){ toast("匯出失敗："+err.message, true); }
+  if (btn){ btn.disabled = false; btn.textContent = label; }
 }
 
 // ---------- 對話框與掃描 ----------
